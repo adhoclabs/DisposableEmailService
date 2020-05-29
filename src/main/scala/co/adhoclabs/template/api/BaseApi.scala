@@ -32,5 +32,4 @@ trait BaseApi extends JsonSupport {
           complete(HttpResponse(InternalServerError, entity = exception.getMessage))
         }
     }
-
 }
