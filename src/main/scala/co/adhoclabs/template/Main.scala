@@ -2,7 +2,7 @@ package co.adhoclabs.template
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import co.adhoclabs.template.api.Api
-import co.adhoclabs.template.business.{SongManager, SongManagerImpl}
+import co.adhoclabs.template.business._
 import co.adhoclabs.template.configuration.{config, configFile}
 
 import scala.concurrent.ExecutionContext
@@ -12,8 +12,7 @@ object Main extends App with Api {
   implicit val system: ActorSystem = ActorSystem("template")
   implicit val executor: ExecutionContext = system.dispatcher
 
-  implicit def songManager: SongManager = new SongManagerImpl
-
+  val songManager: SongManager = implicitly
 
   val host = config.getString("co.adhoclabs.template.host")
   val port = config.getInt("co.adhoclabs.template.port")

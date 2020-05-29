@@ -5,11 +5,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.SongManager
 
-trait SongApi extends BaseApi {
+trait SongApi extends ApiBase {
 
-  implicit def songManager: SongManager
+  implicit val songManager: SongManager
 
-  val songRoutes: Route = path("song" / Segment) { id: String =>
+  val songRoutes: Route = path("songs" / Segment) { id: String =>
     get {
       complete {
         songManager.get(id)

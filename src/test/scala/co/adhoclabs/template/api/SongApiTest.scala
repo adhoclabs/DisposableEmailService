@@ -2,18 +2,12 @@ package co.adhoclabs.template.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import co.adhoclabs.template.business.SongManager
-import co.adhoclabs.template.models.{JsonSupport, Song}
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.funspec.AnyFunSpec
+import co.adhoclabs.template.models.Song
 import scala.concurrent.Future
 
-class SongApiTest extends AnyFunSpec with MockFactory with ScalatestRouteTest with JsonSupport with Api {
+class SongApiTest extends ApiTestBase with Api {
 
-  val songManager: SongManager = mock[SongManager]
-
-  describe("GET /song/:id") {
+  describe("GET /songs/:id") {
     it("should call SongManager.get") {
       val expectedSong: Song = Song(
         id = Some("song-id-123"),
@@ -24,10 +18,11 @@ class SongApiTest extends AnyFunSpec with MockFactory with ScalatestRouteTest wi
         .expects(expectedSong.id.get)
         .returning(Future.successful(Some(expectedSong)))
 
-      Get(s"/song/${expectedSong.id.get}") ~> Route.seal(routes) ~> check {
+      Get(s"/songs/${expectedSong.id.get}") ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.OK)
         assert(responseAs[Song] == expectedSong)
       }
     }
   }
+
 }

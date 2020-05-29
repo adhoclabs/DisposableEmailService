@@ -10,7 +10,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import co.adhoclabs.template.models.JsonSupport
 import org.slf4j.LoggerFactory
 
-trait BaseApi extends JsonSupport {
+trait ApiBase extends JsonSupport {
   protected val logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val system: ActorSystem
