@@ -11,14 +11,16 @@ class SongManagerTest extends BusinessTestBase {
   describe("get") {
     it("should return a song with the supplied id") {
       val expectedSong: Song = Song(
-        id = Some("song-id-123"),
-        title = "Sunshine of Your Love"
+        id = "song-id-123",
+        title = "Sunshine of Your Love",
+        album = "album-123",
+        albumPosition = 1
       )
       (songDao.get _)
-        .expects(expectedSong.id.get)
+        .expects(expectedSong.id)
         .returning(Future.successful(Some(expectedSong)))
 
-      songManager.get(expectedSong.id.get) flatMap {
+      songManager.get(expectedSong.id) flatMap {
         case Some(song: Song) => assert(song == expectedSong)
         case None => fail
       }

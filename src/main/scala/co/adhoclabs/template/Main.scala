@@ -4,15 +4,14 @@ import akka.http.scaladsl.Http
 import co.adhoclabs.template.api.Api
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.configuration.{config, configFile}
-
-import scala.concurrent.ExecutionContext
+import co.adhoclabs.template.actorsystem._
 import scala.util.{Failure, Success}
 
 object Main extends App with Api {
-  implicit val system: ActorSystem = ActorSystem("template")
-  implicit val executor: ExecutionContext = system.dispatcher
-
   val songManager: SongManager = implicitly
+  val albumManager: AlbumManager = implicitly
+
+  implicit val system: ActorSystem = actorsystem.system
 
   val host = config.getString("co.adhoclabs.template.host")
   val port = config.getInt("co.adhoclabs.template.port")
