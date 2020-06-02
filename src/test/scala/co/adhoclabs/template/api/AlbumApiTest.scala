@@ -5,19 +5,27 @@ import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest, Song}
 import co.adhoclabs.template.models.Genre._
+import java.util.UUID
 import scala.concurrent.Future
 import spray.json._
 
 class AlbumApiTest extends ApiTestBase {
 
+  val albumId = UUID.randomUUID
+
+  val expectedAlbum: Album = Album(
+    id = albumId,
+    title = "Remain in Light",
+    genre = Some(Rock)
+  )
+
+  val createAlbumRequest = CreateAlbumRequest(
+    title = expectedAlbum.title,
+    genre = expectedAlbum.genre
+  )
+
   describe("GET /albums/:id") {
     it("should call AlbumManager.get") {
-      val expectedAlbum: Album = Album(
-        id = "album-123",
-        title = "Remain in Light",
-        genre = Some(Rock)
-      )
-
       (albumManager.get _)
         .expects(expectedAlbum.id)
         .returning(Future.successful(Some(expectedAlbum)))
@@ -31,12 +39,6 @@ class AlbumApiTest extends ApiTestBase {
 
   describe("PUT /albums/:id") {
     it("should call AlbumManager.update") {
-      val expectedAlbum = Album(
-        id = "album-123",
-        title = "Remain in Light",
-        genre = Some(Rock)
-      )
-
       (albumManager.update _)
           .expects(expectedAlbum)
           .returning(Future.successful(Some(expectedAlbum)))
@@ -50,17 +52,6 @@ class AlbumApiTest extends ApiTestBase {
 
   describe("POST /albums") {
     it("should call AlbumManager.create and return a 201 Created response when creation is successful") {
-      val createAlbumRequest = CreateAlbumRequest(
-        title = "Remain in Light",
-        genre = Some(Rock)
-      )
-
-      val expectedAlbum: Album = Album(
-        id = "album-123",
-        title = "Remain in Light",
-        genre = Some(Rock)
-      )
-
       (albumManager.create _)
           .expects(createAlbumRequest)
           .returning(Future.successful(expectedAlbum))
@@ -72,11 +63,6 @@ class AlbumApiTest extends ApiTestBase {
     }
 
     it("should call AlbumManager.create and return a 500 response when creation is not successful") {
-      val createAlbumRequest = CreateAlbumRequest(
-        title = "Remain in Light",
-        genre = Some(Rock)
-      )
-
       (albumManager.create _)
           .expects(createAlbumRequest)
           .throwing(new Exception("Album not created")) // todo: use HttpExceptions from model here
@@ -89,7 +75,6 @@ class AlbumApiTest extends ApiTestBase {
 
   describe("GET /albums/:id/songs") {
     it("should call AlbumManager.getAlbumSongs and return a 200 with a list of songs") {
-      val albumId = "album-123"
 
       val expectedSongs: List[Song] = List(
         Song(

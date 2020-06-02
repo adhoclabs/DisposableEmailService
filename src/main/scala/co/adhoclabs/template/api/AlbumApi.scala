@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.PathMatchers.Segment
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
+import java.util.UUID
 
 trait AlbumApi extends ApiBase {
 
@@ -18,7 +19,7 @@ trait AlbumApi extends ApiBase {
           postAlbumRoute
         }
       },
-      pathPrefix(Segment) { id: String =>
+      pathPrefix(JavaUUID) { id: UUID =>
         concat (
           pathEnd {
             concat(
@@ -38,7 +39,7 @@ trait AlbumApi extends ApiBase {
     )
   }
 
-  def getAlbumRoute(id: String): Route =
+  def getAlbumRoute(id: UUID): Route =
     complete {
       albumManager.get(id)
     }
@@ -51,14 +52,14 @@ trait AlbumApi extends ApiBase {
       }
     }
 
-  def putAlbumRoute(id: String): Route =
+  def putAlbumRoute(id: UUID): Route =
     entity(as[Album]) { album: Album =>
       complete {
         albumManager.update(album)
       }
     }
 
-  def getAlbumSongs(id: String): Route =
+  def getAlbumSongs(id: UUID): Route =
     complete {
       albumManager.getAlbumSongs(id)
     }

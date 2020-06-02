@@ -1,6 +1,6 @@
 create type genre as enum(
     'Rock',
-    'Hip Hop',
+    'HipHop',
     'Classical',
     'Pop'
 );

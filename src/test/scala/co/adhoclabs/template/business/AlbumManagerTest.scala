@@ -3,6 +3,7 @@ package co.adhoclabs.template.business
 import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
 import co.adhoclabs.template.models.Genre._
+import java.util.UUID
 import scala.concurrent.Future
 
 class AlbumManagerTest extends BusinessTestBase {
@@ -11,8 +12,9 @@ class AlbumManagerTest extends BusinessTestBase {
 
   describe("get") {
     it("should return a album with the supplied id") {
+      val albumId = UUID.randomUUID
       val expectedAlbum: Album = Album(
-        id = "album-id-123",
+        id = albumId,
         title = "Disraeli Gears",
         genre = Some(Rock)
       )
@@ -28,8 +30,9 @@ class AlbumManagerTest extends BusinessTestBase {
   }
 
   describe("create") {
+    val albumId = UUID.randomUUID
     val expectedAlbum: Album = Album(
-      id = "album-id-123",
+      id = albumId,
       title = "Halo Reach Soundtrack",
       genre = Some(Classical)
     )
@@ -42,7 +45,7 @@ class AlbumManagerTest extends BusinessTestBase {
     it("should call AlbumDao.create and return an album when successful"){
       (albumDao.create _)
           .expects(createAlbumRequest)
-          .returning(Future.successful(Some(expectedAlbum)))
+          .returning(Future.successful(expectedAlbum))
 
       albumManager.create(createAlbumRequest) flatMap { album: Album =>
         assert(album == expectedAlbum)

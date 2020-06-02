@@ -4,14 +4,14 @@ import co.adhoclabs.template.models.Genre.Genre
 import java.util.UUID
 
 case class Album(
-  id: String,
+  id: UUID,
   title: String,
   genre: Option[Genre]
 )
 
-object Album {
+object Album extends ((UUID, String, Option[Genre]) => Album) {
   def apply(createAlbumRequest: CreateAlbumRequest): Album = Album(
-    id = UUID.randomUUID.toString,
+    id = UUID.randomUUID,
     title = createAlbumRequest.title,
     genre = createAlbumRequest.genre
   )

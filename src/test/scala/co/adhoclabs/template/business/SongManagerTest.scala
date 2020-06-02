@@ -2,6 +2,7 @@ package co.adhoclabs.template.business
 
 import co.adhoclabs.template.data.SongDao
 import co.adhoclabs.template.models.Song
+import java.util.UUID
 import scala.concurrent.Future
 
 class SongManagerTest extends BusinessTestBase {
@@ -10,10 +11,11 @@ class SongManagerTest extends BusinessTestBase {
 
   describe("get") {
     it("should return a song with the supplied id") {
+      val albumId = UUID.randomUUID
       val expectedSong: Song = Song(
         id = "song-id-123",
         title = "Sunshine of Your Love",
-        album = "album-123",
+        album = albumId,
         albumPosition = 1
       )
       (songDao.get _)
