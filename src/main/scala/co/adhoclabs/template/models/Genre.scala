@@ -1,6 +1,7 @@
 package co.adhoclabs.template.models
 
-import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsValue, RootJsonFormat}
+import co.adhoclabs.template.models.Genre.Genre
+import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 object Genre extends Enumeration with DefaultJsonProtocol {
   val Rock = Value(0)
@@ -10,15 +11,29 @@ object Genre extends Enumeration with DefaultJsonProtocol {
 
   type Genre = Value
 
-  // Manually defining the RootJsonFormat for this enum
+  // Manually defining the RootJsonFormat for this enum because since this isn't a case class, it doesn't have a
+  // default json format
+
+  // TODO: can we genericize this?
   implicit object GenreFormat extends RootJsonFormat[Genre] {
-    def write(genre: Genre): JsNumber = JsNumber(genre.id)
-    def read(value: JsValue): Genre = {
-      value match {
-        case JsNumber(genre) => try { Genre(genre.toInt) } catch {
-          case e: Throwable => throw DeserializationException(s"No corresponding Genre exists for id $genre.", e)
-        }
-        case jsValue => throw DeserializationException(s"Unable to parse value [$jsValue] supplied for Genre")
+    def enumClassName: String = "Genre"
+    
+    def write(genre: Genre): JsObject = JsObject(("id", JsNumber(genre.id)), ("name", JsString(genre.toString)))
+
+    def read(jsValue: JsValue): Genre = {
+
+      def tryGetValue(id: Int) = try { Genre(id) } catch {
+        case e: Throwable => throw DeserializationException(s"No corresponding $enumClassName value exists for id $id.", e)
+      }
+
+      jsValue match {
+        case JsNumber(id) => tryGetValue(id.toIntExact)
+        case _ =>
+          val jsObject = jsValue.asJsObject
+          jsObject.getFields("id") match {
+            case Seq(JsNumber(id)) => tryGetValue(id.toIntExact)
+            case _ => throw DeserializationException(s"Unable to parse value $jsValue supplied for $enumClassName")
+          }
       }
     }
   }

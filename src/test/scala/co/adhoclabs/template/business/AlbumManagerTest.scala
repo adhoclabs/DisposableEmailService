@@ -44,7 +44,7 @@ class AlbumManagerTest extends BusinessTestBase {
 
     it("should call AlbumDao.create and return an album when successful"){
       (albumDao.create _)
-          .expects(createAlbumRequest)
+          .expects(*)
           .returning(Future.successful(expectedAlbum))
 
       albumManager.create(createAlbumRequest) flatMap { album: Album =>

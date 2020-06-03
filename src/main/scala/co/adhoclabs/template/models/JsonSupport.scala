@@ -5,6 +5,7 @@ import java.util.UUID
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
+
   implicit object UuidJsonFormat extends JsonFormat[UUID] {
     def write(x: UUID) = JsString(x toString ())
     def read(value: JsValue): UUID = value match {
@@ -14,6 +15,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   }
 
   implicit val songFormat: RootJsonFormat[Song] = jsonFormat4(Song.apply)
+  implicit val createSongFormat: RootJsonFormat[CreateSongRequest] = jsonFormat3(CreateSongRequest.apply)
   implicit val albumFormat: RootJsonFormat[Album] = jsonFormat3(Album.apply)
   implicit val createAlbumFormat: RootJsonFormat[CreateAlbumRequest] = jsonFormat2(CreateAlbumRequest)
 

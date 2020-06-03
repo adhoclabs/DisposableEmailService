@@ -16,7 +16,7 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: Execution
   override def get(id: UUID): Future[Option[Album]] = albumDao.get(id)
 
   override def create(createAlbumRequest: CreateAlbumRequest): Future[Album] =
-    albumDao.create(createAlbumRequest)
+    albumDao.create(Album(createAlbumRequest))
 
   override def update(album: Album): Future[Option[Album]] = albumDao.update(album)
 

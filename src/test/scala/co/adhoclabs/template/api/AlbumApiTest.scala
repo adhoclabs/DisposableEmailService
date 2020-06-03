@@ -78,13 +78,13 @@ class AlbumApiTest extends ApiTestBase {
 
       val expectedSongs: List[Song] = List(
         Song(
-          id = "song-id-123",
+          id = UUID.randomUUID,
           title = "Born Under Punches (the Heat Goes on)",
           album = albumId,
           albumPosition = 1
         ),
         Song(
-          id = "song-id-124",
+          id = UUID.randomUUID,
           title = "Once in a Lifetime",
           album = albumId,
           albumPosition = 2

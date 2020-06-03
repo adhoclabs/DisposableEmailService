@@ -12,9 +12,10 @@ import slick.sql.FixedSqlAction
 
 trait AlbumDao {
   def get(id: UUID): Future[Option[Album]]
-  def create(albumRequest: CreateAlbumRequest): Future[Album]
+  def create(album: Album): Future[Album]
   def update(album: Album): Future[Option[Album]]
   def getAlbumSongs(id: UUID): Future[List[Song]]
+  def delete(id: UUID): Future[Unit]
 }
 
 case class AlbumTable(tag: Tag) extends Table[Album](tag, "albums") {
@@ -36,11 +37,13 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection) extends Base
     albums.filter(_.id === id).result.headOption
   )
 
-  override def create(albumRequest: CreateAlbumRequest): Future[Album] = db.run(
-    albums.returning(albums) += Album(albumRequest)
+  override def create(album: Album): Future[Album] = db.run(
+    albums.returning(albums) += album
   )
 
   override def update(album: Album): Future[Option[Album]] = Future.successful(Some(album))
 
   override def getAlbumSongs(id: UUID): Future[List[Song]] = ???
+
+  override def delete(id: UUID): Future[Unit] = ???
 }

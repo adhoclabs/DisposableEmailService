@@ -14,5 +14,5 @@ create table if not exists albums (
 create table if not exists songs (
     id uuid primary key,
     title text,
-    album uuid references albums(id)
+    album uuid references albums(id) on delete cascade
 );
