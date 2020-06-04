@@ -17,6 +17,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val songFormat: RootJsonFormat[Song] = jsonFormat4(Song.apply)
   implicit val createSongFormat: RootJsonFormat[CreateSongRequest] = jsonFormat3(CreateSongRequest.apply)
   implicit val albumFormat: RootJsonFormat[Album] = jsonFormat3(Album.apply)
-  implicit val createAlbumFormat: RootJsonFormat[CreateAlbumRequest] = jsonFormat2(CreateAlbumRequest)
+  implicit val createAlbumFormat: RootJsonFormat[CreateAlbumRequest] = jsonFormat3(CreateAlbumRequest.apply)
+  implicit val albumWithSongsFormat: RootJsonFormat[AlbumWithSongs] = jsonFormat2(AlbumWithSongs.apply)
 
 }

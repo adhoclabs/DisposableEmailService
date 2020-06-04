@@ -1,9 +1,10 @@
 package co.adhoclabs.template.business
 
 import co.adhoclabs.template.data.AlbumDao
-import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest, Song}
 import co.adhoclabs.template.models.Genre._
 import java.util.UUID
+
 import scala.concurrent.Future
 
 class AlbumManagerTest extends BusinessTestBase {
@@ -30,25 +31,35 @@ class AlbumManagerTest extends BusinessTestBase {
   }
 
   describe("create") {
-    val albumId = UUID.randomUUID
     val expectedAlbum: Album = Album(
-      id = albumId,
+      id = UUID.randomUUID,
       title = "Halo Reach Soundtrack",
       genre = Some(Classical)
+    )
+    val expectedSong = Song(
+      id = UUID.randomUUID,
+      title = "Forever Drakeness",
+      albumId = expectedAlbum.id,
+      albumPosition = 1
     )
 
     val createAlbumRequest = CreateAlbumRequest(
       title = expectedAlbum.title,
-      genre = expectedAlbum.genre
+      genre = expectedAlbum.genre,
+      songs = List(CreateSongRequest(
+        title = expectedSong.title,
+        albumId = expectedSong.albumId,
+        albumPosition = expectedSong.albumPosition
+      )),
     )
 
     it("should call AlbumDao.create and return an album when successful"){
       (albumDao.create _)
           .expects(*)
-          .returning(Future.successful(expectedAlbum))
+          .returning(Future.successful(AlbumWithSongs(expectedAlbum, List(expectedSong))))
 
-      albumManager.create(createAlbumRequest) flatMap { album: Album =>
-        assert(album == expectedAlbum)
+      albumManager.create(createAlbumRequest) flatMap { albumWithSongs: AlbumWithSongs =>
+        assert(albumWithSongs.album == expectedAlbum)
       }
     }
 

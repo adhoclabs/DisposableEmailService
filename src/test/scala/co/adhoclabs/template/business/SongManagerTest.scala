@@ -15,13 +15,13 @@ class SongManagerTest extends BusinessTestBase {
   val song: Song = Song(
     id = songId,
     title = "Sunshine of Your Love",
-    album = albumId,
+    albumId = albumId,
     albumPosition = 1
   )
 
   val createSongRequest = CreateSongRequest(
     title = song.title,
-    album = song.album,
+    albumId = song.albumId,
     albumPosition = 1
   )
 
@@ -41,7 +41,7 @@ class SongManagerTest extends BusinessTestBase {
   describe("create") {
     it("should call SongDao.create and return a newly saved song") {
       (songDao.create _)
-          .expects(createSongRequest)
+          .expects(song)
           .returning(Future.successful(song))
 
       songManager.create(createSongRequest) flatMap { createdSong: Song =>

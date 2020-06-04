@@ -1,5 +1,7 @@
 package co.adhoclabs.template
 
+import co.adhoclabs.template.actorsystem.executor
+
 package object data {
   implicit val databaseConnection: DatabaseConnection = DatabaseConnectionImpl
 

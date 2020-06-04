@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.server.Directives.{complete, extractRequest}
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import co.adhoclabs.model.exceptions.HttpException
 import co.adhoclabs.template.models.JsonSupport
 import org.slf4j.LoggerFactory
 import co.adhoclabs.template.actorsystem._
@@ -19,11 +20,11 @@ trait ApiBase extends JsonSupport {
 
   protected implicit val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
-//      case httpException: HttpException =>
-//        extractRequest { request: HttpRequest =>
-//          logRequestException(request, httpException)
-//          complete(httpException.response)
-//        }
+      case httpException: HttpException =>
+        extractRequest { request: HttpRequest =>
+          logRequestException(request, httpException)
+          complete(httpException.response)
+        }
       case exception: Exception =>
         extractRequest { request =>
           logRequestException(request, exception)

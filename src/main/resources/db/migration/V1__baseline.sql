@@ -8,7 +8,7 @@ create type genre as enum(
 create table if not exists albums (
     id uuid primary key,
     title text,
-    genre genre
+    genre genre default 'Pop'
 );
 
 create table if not exists songs (

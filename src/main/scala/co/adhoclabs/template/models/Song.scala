@@ -5,7 +5,7 @@ import java.util.UUID
 case class Song(
   id: UUID,
   title: String,
-  album: UUID,
+  albumId: UUID,
   albumPosition: Int
 )
 
@@ -13,13 +13,13 @@ object Song extends ((UUID, String, UUID, Int) => Song) {
   def apply(createSongRequest: CreateSongRequest): Song = Song(
     id = UUID.randomUUID,
     title = createSongRequest.title,
-    album = createSongRequest.album,
+    albumId = createSongRequest.albumId,
     albumPosition = createSongRequest.albumPosition
   )
 }
 
 case class CreateSongRequest(
   title: String,
-  album: UUID,
+  albumId: UUID,
   albumPosition: Int
 )

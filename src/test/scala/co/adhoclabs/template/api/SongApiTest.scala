@@ -16,13 +16,13 @@ class SongApiTest extends ApiTestBase {
   val expectedSong: Song = Song(
     id = songId,
     title = "Once in a Lifetime",
-    album = albumId,
+    albumId = albumId,
     albumPosition = 1
   )
 
   val createSongRequest: CreateSongRequest = CreateSongRequest(
     title = expectedSong.title,
-    album = expectedSong.album,
+    albumId = expectedSong.albumId,
     albumPosition = expectedSong.albumPosition
   )
 

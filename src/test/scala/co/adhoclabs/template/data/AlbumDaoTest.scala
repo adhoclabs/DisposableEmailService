@@ -1,9 +1,11 @@
 package co.adhoclabs.template.data
 
-import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, Song}
 import co.adhoclabs.template.models.Genre._
 import java.util.UUID
+
 import org.scalatest.FutureOutcome
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -29,17 +31,23 @@ class AlbumDaoTest extends DataTestBase {
       val album = Album(
         id = UUID.randomUUID,
         title = "Remain in Light",
-        genre = Some(Rock)
+        //genre = Some(Rock)
+      )
+      val song = Song(
+        id = UUID.randomUUID,
+        title = "Forever Darkness",
+        albumId = album.id,
+        albumPosition = 1
       )
 
-      albumDao.create(album) flatMap { albumFromCreate: Album =>
-        assert(albumFromCreate.title == album.title)
-        assert(albumFromCreate.genre == album.genre)
+      albumDao.create(AlbumWithSongs(album, List(song))) flatMap { albumFromCreate: AlbumWithSongs =>
+        assert(albumFromCreate.album.title == album.title)
+        assert(albumFromCreate.album.genre == album.genre)
 
-        albumDao.get(albumFromCreate.id) flatMap {
+        albumDao.get(albumFromCreate.album.id) flatMap {
           case Some(albumFromGet: Album) =>
-            assert(albumFromGet.title == albumFromCreate.title)
-            assert(albumFromGet.genre == albumFromCreate.genre)
+            assert(albumFromGet.title == albumFromCreate.album.title)
+            assert(albumFromGet.genre == albumFromCreate.album.genre)
 
 
           case None => fail

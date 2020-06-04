@@ -3,25 +3,34 @@ package co.adhoclabs.template.api
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
-import co.adhoclabs.template.models.{Album, CreateAlbumRequest, Song}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest, Song}
 import co.adhoclabs.template.models.Genre._
 import java.util.UUID
+
 import scala.concurrent.Future
 import spray.json._
 
 class AlbumApiTest extends ApiTestBase {
 
   val albumId = UUID.randomUUID
+  val songId = UUID.randomUUID
 
-  val expectedAlbum: Album = Album(
+  val expectedAlbum = Album(
     id = albumId,
     title = "Remain in Light",
     genre = Some(Rock)
   )
+  val expectedSong = Song(
+    id = songId,
+    title = "Forever Drakeness",
+    albumId = expectedAlbum.id,
+    albumPosition = 1
+  )
 
   val createAlbumRequest = CreateAlbumRequest(
     title = expectedAlbum.title,
-    genre = expectedAlbum.genre
+    genre = expectedAlbum.genre,
+    songs = List.empty[CreateSongRequest]
   )
 
   describe("GET /albums/:id") {
@@ -54,7 +63,7 @@ class AlbumApiTest extends ApiTestBase {
     it("should call AlbumManager.create and return a 201 Created response when creation is successful") {
       (albumManager.create _)
           .expects(createAlbumRequest)
-          .returning(Future.successful(expectedAlbum))
+          .returning(Future.successful(AlbumWithSongs(expectedAlbum, List(expectedSong))))
 
       Post(s"/albums", HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.Created)
@@ -80,13 +89,13 @@ class AlbumApiTest extends ApiTestBase {
         Song(
           id = UUID.randomUUID,
           title = "Born Under Punches (the Heat Goes on)",
-          album = albumId,
+          albumId = albumId,
           albumPosition = 1
         ),
         Song(
           id = UUID.randomUUID,
           title = "Once in a Lifetime",
-          album = albumId,
+          albumId = albumId,
           albumPosition = 2
         )
       )

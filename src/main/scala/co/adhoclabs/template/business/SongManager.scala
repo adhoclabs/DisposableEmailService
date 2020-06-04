@@ -14,7 +14,7 @@ trait SongManager extends BusinessBase {
 class SongManagerImpl (implicit songDao: SongDao) extends SongManager {
   override def get(id: UUID): Future[Option[Song]] = songDao.get(id)
 
-  override def create(createSongRequest: CreateSongRequest): Future[Song] = songDao.create(createSongRequest)
+  override def create(createSongRequest: CreateSongRequest): Future[Song] = songDao.create(Song(createSongRequest))
 
   override def update(song: Song): Future[Option[Song]] = songDao.update(song)
 }
