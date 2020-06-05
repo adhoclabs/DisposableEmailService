@@ -8,11 +8,12 @@ create type genre as enum(
 create table if not exists albums (
     id uuid primary key,
     title text,
-    genre genre default 'Pop'
+    genre genre
 );
 
 create table if not exists songs (
     id uuid primary key,
     title text,
-    album uuid references albums(id) on delete cascade
+    album_id uuid references albums(id) on delete cascade,
+    album_position integer
 );

@@ -2,7 +2,7 @@ name := "microservice_template"
 
 version := "0.1"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.2"
 
 libraryDependencies ++= Seq(
   // External dependencies
