@@ -13,53 +13,38 @@ class AlbumManagerTest extends BusinessTestBase {
 
   describe("get") {
     it("should return a album with the supplied id") {
-      val albumId = UUID.randomUUID
-      val expectedAlbum: Album = Album(
-        id = albumId,
-        title = "Disraeli Gears",
-        genre = Some(Rock)
-      )
+      val expectedAlbumWithSongs = generateAlbumWithSongs()
       (albumDao.get _)
-        .expects(expectedAlbum.id)
-        .returning(Future.successful(Some(expectedAlbum)))
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
-      albumManager.get(expectedAlbum.id) flatMap {
-        case Some(album: Album) => assert(album == expectedAlbum)
+      albumManager.get(expectedAlbumWithSongs.album.id) flatMap {
+        case Some(albumWithSongs) => assert(albumWithSongs == expectedAlbumWithSongs)
         case None => fail
       }
     }
   }
 
   describe("create") {
-    val expectedAlbum: Album = Album(
-      id = UUID.randomUUID,
-      title = "Halo Reach Soundtrack",
-      genre = Some(Classical)
-    )
-    val expectedSong = Song(
-      id = UUID.randomUUID,
-      title = "Forever Drakeness",
-      albumId = expectedAlbum.id,
-      albumPosition = 1
-    )
+    val expectedAlbumWithSongs = generateAlbumWithSongs()
 
     val createAlbumRequest = CreateAlbumRequest(
-      title = expectedAlbum.title,
-      genre = expectedAlbum.genre,
-      songs = List(CreateSongRequest(
-        title = expectedSong.title,
-        albumId = expectedSong.albumId,
-        albumPosition = expectedSong.albumPosition
+      title = expectedAlbumWithSongs.album.title,
+      genre = expectedAlbumWithSongs.album.genre,
+      songs = expectedAlbumWithSongs.songs.map(song => CreateSongRequest(
+        title = song.title,
+        albumId = song.albumId,
+        albumPosition = song.albumPosition
       )),
     )
 
     it("should call AlbumDao.create and return an album when successful"){
       (albumDao.create _)
           .expects(*)
-          .returning(Future.successful(AlbumWithSongs(expectedAlbum, List(expectedSong))))
+          .returning(Future.successful(expectedAlbumWithSongs))
 
       albumManager.create(createAlbumRequest) flatMap { albumWithSongs: AlbumWithSongs =>
-        assert(albumWithSongs.album == expectedAlbum)
+        assert(albumWithSongs == expectedAlbumWithSongs)
       }
     }
 
@@ -87,5 +72,4 @@ class AlbumManagerTest extends BusinessTestBase {
 //
 //    }
   }
-
 }

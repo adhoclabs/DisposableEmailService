@@ -12,7 +12,7 @@ class SongManagerTest extends BusinessTestBase {
   val albumId = UUID.randomUUID
   val songId = UUID.randomUUID
 
-  val song: Song = Song(
+  val expectedSong: Song = Song(
     id = songId,
     title = "Sunshine of Your Love",
     albumId = albumId,
@@ -20,18 +20,18 @@ class SongManagerTest extends BusinessTestBase {
   )
 
   val createSongRequest = CreateSongRequest(
-    title = song.title,
-    albumId = song.albumId,
+    title = expectedSong.title,
+    albumId = expectedSong.albumId,
     albumPosition = 1
   )
 
   describe("get") {
     it("should return a song with the supplied id") {
       (songDao.get _)
-        .expects(song.id)
-        .returning(Future.successful(Some(song)))
+        .expects(expectedSong.id)
+        .returning(Future.successful(Some(expectedSong)))
 
-      songManager.get(song.id) flatMap {
+      songManager.get(expectedSong.id) flatMap {
         case Some(song: Song) => assert(song == song)
         case None => fail
       }
@@ -41,11 +41,14 @@ class SongManagerTest extends BusinessTestBase {
   describe("create") {
     it("should call SongDao.create and return a newly saved song") {
       (songDao.create _)
-          .expects(song)
-          .returning(Future.successful(song))
+          .expects(where { song: Song =>
+            // Since the song id is generated in the create method, we want to match on everything else
+            song.title == expectedSong.title && song.albumId == expectedSong.albumId && song.albumPosition == expectedSong.albumPosition
+          })
+          .returning(Future.successful(expectedSong))
 
       songManager.create(createSongRequest) flatMap { createdSong: Song =>
-        assert(createdSong == song)
+        assert(createdSong == expectedSong)
 
       }
     }
@@ -54,11 +57,11 @@ class SongManagerTest extends BusinessTestBase {
   describe("update") {
     it("should call SongDao.update and return updated song if it already exists") {
       (songDao.update _)
-          .expects(song)
-          .returning(Future.successful(Some(song)))
+          .expects(expectedSong)
+          .returning(Future.successful(Some(expectedSong)))
 
-      songManager.update(song) flatMap {
-        case Some(updatedSong: Song) => assert(updatedSong == song)
+      songManager.update(expectedSong) flatMap {
+        case Some(updatedSong: Song) => assert(updatedSong == expectedSong)
         case None => fail
       }
     }

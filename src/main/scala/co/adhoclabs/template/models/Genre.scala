@@ -4,17 +4,17 @@ import co.adhoclabs.template.models.Genre.Genre
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 object Genre extends Enumeration with DefaultJsonProtocol {
-  val Rock = Value(0)
-  val HipHop = Value(1)
-  val Classical = Value(2)
-  val Pop = Value(3)
+  val NoGenre = Value
+  val Rock = Value
+  val HipHop = Value
+  val Classical = Value
+  val Pop = Value
 
   type Genre = Value
 
   // Manually defining the RootJsonFormat for this enum because since this isn't a case class, it doesn't have a
   // default json format
 
-  // TODO: can we genericize this?
   implicit object GenreFormat extends RootJsonFormat[Genre] {
     def enumClassName: String = "Genre"
     

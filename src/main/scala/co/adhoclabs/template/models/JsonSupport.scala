@@ -7,10 +7,10 @@ import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsVa
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit object UuidJsonFormat extends JsonFormat[UUID] {
-    def write(x: UUID) = JsString(x toString ())
+    def write(uuid: UUID) = JsString(uuid.toString)
     def read(value: JsValue): UUID = value match {
-      case JsString(x) => UUID.fromString(x)
-      case x => throw DeserializationException("Expected UUID as JsString, but got " + x)
+      case JsString(s) => UUID.fromString(s)
+      case _ => throw DeserializationException("Expected UUID as JsString, but got " + value)
     }
   }
 
@@ -19,5 +19,4 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val albumFormat: RootJsonFormat[Album] = jsonFormat3(Album.apply)
   implicit val createAlbumFormat: RootJsonFormat[CreateAlbumRequest] = jsonFormat3(CreateAlbumRequest.apply)
   implicit val albumWithSongsFormat: RootJsonFormat[AlbumWithSongs] = jsonFormat2(AlbumWithSongs.apply)
-
 }

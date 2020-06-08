@@ -3,6 +3,7 @@ package co.adhoclabs.template.data
 import java.util.UUID
 
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
+import co.adhoclabs.template.exceptions.SongNotDeletedException
 import co.adhoclabs.template.models.Song
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.GetResult
@@ -15,6 +16,7 @@ trait SongDao {
   def create(song: Song): Future[Song]
   def createMany(songs: List[Song]): Future[List[Song]]
   def update(song: Song): Future[Option[Song]]
+  def delete(id: UUID): Future[Int]
 }
 
 case class SongsTable(tag: Tag) extends Table[Song](tag, "songs") {
@@ -55,26 +57,34 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
   }
 
   override def update(song: Song): Future[Option[Song]] = {
-    val query =
-      sql"""
-        update songs
-        set
-          title = ${song.title},
-          album_id = ${song.albumId},
-          album_position = ${song.albumPosition}
-        where id = ${song.id}
-        returning *
-         """
     db.run(
-      query
-        .as[Song]
-        .headOption
-    )
+      songs
+        .filterById(song.id)
+        .update(song)
+    ) flatMap { rowsAffected: Int =>
+      if (rowsAffected == 1)
+        get(song.id)
+      else
+        Future.successful(None)
+    }
+  }
+
+  override def delete(id: UUID): Future[Int] = {
+    db.run(
+      songs
+        .filterById(id)
+        .delete
+    ) map {
+      case count if count != 1 =>
+        throw SongNotDeletedException(id)
+      case count =>
+        count
+    }
   }
 
   implicit class SongsQueries(val query: SongsQuery) {
     def filterById(id: UUID): SongsQuery =
       query.filter(_.id === id)
   }
-  implicit val getSongResult: GetResult[Song] = GetResult(r => Song(r.<<, r.<<, r.<<, r.<<))
+  implicit val getSongResult: GetResult[Song] = GetResult(r => Song(r.nextUuid, r.nextString, r.nextUuid, r.nextInt))
 }

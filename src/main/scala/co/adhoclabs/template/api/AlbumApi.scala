@@ -30,9 +30,6 @@ trait AlbumApi extends ApiBase {
                 putAlbumRoute(id)
               }
             )
-          },
-          path("songs") {
-            getAlbumSongs(id)
           }
         )
       }
@@ -57,10 +54,5 @@ trait AlbumApi extends ApiBase {
       complete {
         albumManager.update(album)
       }
-    }
-
-  def getAlbumSongs(id: UUID): Route =
-    complete {
-      albumManager.getAlbumSongs(id)
     }
 }

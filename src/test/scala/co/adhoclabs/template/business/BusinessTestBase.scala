@@ -1,9 +1,8 @@
 package co.adhoclabs.template.business
 
+import co.adhoclabs.template.TestBase
 import com.typesafe.config.ConfigFactory
-import org.scalamock.scalatest.AsyncMockFactory
-import org.scalatest.funspec.AsyncFunSpec
 
-abstract class BusinessTestBase extends AsyncFunSpec with AsyncMockFactory {
+abstract class BusinessTestBase extends TestBase {
   implicit protected val config = ConfigFactory.load()
 }

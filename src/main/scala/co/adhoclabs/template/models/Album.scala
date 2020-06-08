@@ -1,12 +1,12 @@
 package co.adhoclabs.template.models
 
-import co.adhoclabs.template.models.Genre.Genre
+import co.adhoclabs.template.models.Genre._
 import java.util.UUID
 
 case class Album(
   id: UUID,
   title: String,
-  genre: Option[Genre] = None
+  genre: Genre = NoGenre
 )
 
 case class AlbumWithSongs(
@@ -30,6 +30,6 @@ object AlbumWithSongs {
 
 case class CreateAlbumRequest(
   title: String,
-  genre: Option[Genre],
+  genre: Genre,
   songs: List[CreateSongRequest]
 )

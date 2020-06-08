@@ -1,59 +1,61 @@
 package co.adhoclabs.template.data
 
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, Song}
+import co.adhoclabs.template.models.AlbumWithSongs
 import co.adhoclabs.template.models.Genre._
-import java.util.UUID
-
-import org.scalatest.FutureOutcome
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class AlbumDaoTest extends DataTestBase {
-  val albumDao: AlbumDao = new AlbumDaoImpl
+  describe("create, get, update, delete") {
+    it("should correctly execute the lifecycle of an album") {
+      val expectedAlbumWithSongs = generateAlbumWithSongs()
 
-//  val existingAlbum = Album(
-//    id = UUID.randomUUID,
-//    title = "halo 3 soundtrack",
-//    genre = Some(Classical)
-//  )
+      albumDao.create(AlbumWithSongs(expectedAlbumWithSongs.album, expectedAlbumWithSongs.songs)) flatMap { createdAlbumWithSongs: AlbumWithSongs =>
+        assert(createdAlbumWithSongs == expectedAlbumWithSongs)
 
-  override def withFixture(test: NoArgAsyncTest): FutureOutcome = {
+        albumDao.get(expectedAlbumWithSongs.album.id) flatMap {
+          case Some(gottenAlbumWithSongs) =>
+            assert(gottenAlbumWithSongs == expectedAlbumWithSongs)
 
-    complete {
-      super.withFixture(test)
-    } lastly {
-    }
-  }
+            val expectedUpdatedAlbum = expectedAlbumWithSongs.album.copy(title = "updated title", genre = Rock)
+            albumDao.update(expectedUpdatedAlbum) flatMap {
+              case Some(updatedAlbum) =>
+                assert(updatedAlbum == expectedUpdatedAlbum)
 
-  describe("create, get, delete") {
-    it("should save and return an album") {
-      val album = Album(
-        id = UUID.randomUUID,
-        title = "Remain in Light",
-        //genre = Some(Rock)
-      )
-      val song = Song(
-        id = UUID.randomUUID,
-        title = "Forever Darkness",
-        albumId = album.id,
-        albumPosition = 1
-      )
+                albumDao.delete(expectedAlbumWithSongs.album.id) flatMap { count =>
+                  assert(count == 1)
 
-      albumDao.create(AlbumWithSongs(album, List(song))) flatMap { albumFromCreate: AlbumWithSongs =>
-        assert(albumFromCreate.album.title == album.title)
-        assert(albumFromCreate.album.genre == album.genre)
-
-        albumDao.get(albumFromCreate.album.id) flatMap {
-          case Some(albumFromGet: Album) =>
-            assert(albumFromGet.title == albumFromCreate.album.title)
-            assert(albumFromGet.genre == albumFromCreate.album.genre)
-
-
+                  albumDao.get(expectedAlbumWithSongs.album.id) flatMap { a =>
+                    assert(a.isEmpty)
+                  }
+                }
+              case None => fail
+            }
           case None => fail
         }
       }
     }
   }
 
+  describe("creating an empty album") {
+    it("should correctly create with no songs") {
+      val expectedAlbumWithSongs = generateAlbumWithSongs(songCount = 0)
+
+      albumDao.create(AlbumWithSongs(expectedAlbumWithSongs.album, expectedAlbumWithSongs.songs)) flatMap { createdAlbumWithSongs: AlbumWithSongs =>
+        assert(createdAlbumWithSongs == expectedAlbumWithSongs)
+
+        albumDao.get(expectedAlbumWithSongs.album.id) flatMap {
+          case Some(gottenAlbumWithSongs) =>
+            assert(gottenAlbumWithSongs == expectedAlbumWithSongs)
+
+            albumDao.delete(expectedAlbumWithSongs.album.id) flatMap { count =>
+              assert(count == 1)
+
+              albumDao.get(expectedAlbumWithSongs.album.id) flatMap { a =>
+                assert(a.isEmpty)
+              }
+            }
+          case None => fail
+        }
+      }
+    }
+  }
 }
