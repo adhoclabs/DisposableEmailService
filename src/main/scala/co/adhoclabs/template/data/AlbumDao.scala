@@ -37,8 +37,6 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
   lazy val songs = TableQuery[SongsTable]
   private type AlbumsQuery = Query[AlbumsTable, Album, Seq]
 
-  logger.debug(s"Execution context! ${executionContext}")
-
   override def get(id: UUID): Future[Option[AlbumWithSongs]] = {
     val queryAction =
       sql"""

@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 trait ApiBase extends JsonSupport {
   protected val logger = LoggerFactory.getLogger(this.getClass)
 
-  private def logRequestException(request: HttpRequest, exception: Exception): Unit =
+  protected def logRequestException(request: HttpRequest, exception: Exception): Unit =
     logger.error(s"${request.method} request to ${request.uri} with body ${Unmarshal(request.entity).to[String]} " +
         s"failed with exception message: ${exception.getMessage})", exception)
 
