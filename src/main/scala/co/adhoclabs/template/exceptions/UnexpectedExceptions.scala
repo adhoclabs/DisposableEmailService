@@ -1,7 +1,6 @@
 package co.adhoclabs.template.exceptions
 
 import java.util.UUID
-
 import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.models.Album
 
@@ -17,4 +16,8 @@ case class AlbumNotDeletedException(albumId: UUID) extends UnexpectedException(
 
 case class SongNotDeletedException(songId: UUID) extends UnexpectedException(
     ErrorResponse(s"Unknown error deleting song entitled $songId.")
+)
+
+case class AnalyticsSqsClientFailedToInitializeException() extends UnexpectedException(
+    ErrorResponse("Analytics SQS queue failed to initialize")
 )
