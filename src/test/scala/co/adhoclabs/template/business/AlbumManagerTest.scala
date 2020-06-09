@@ -1,7 +1,7 @@
 package co.adhoclabs.template.business
 
 import co.adhoclabs.analytics.AnalyticsManager
-import co.adhoclabs.template.analytics.events.AlbumCreatedAnalyticsEvent
+import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.models.{AlbumWithSongs, CreateAlbumRequest, CreateSongRequest}
 import scala.concurrent.Future
@@ -45,7 +45,7 @@ class AlbumManagerTest extends BusinessTestBase {
           .returning(Future.successful(expectedAlbumWithSongs))
 
       (analyticsManager.trackEvent _)
-        .expects(AlbumCreatedAnalyticsEvent(expectedAlbumWithSongs.album.id))
+        .expects(AlbumCreatedAnalyticsEvent(expectedAlbumWithSongs.album))
         .returning(Future.successful())
 
       albumManager.create(createAlbumRequest) flatMap { albumWithSongs: AlbumWithSongs =>

@@ -1,7 +1,7 @@
 package co.adhoclabs.template.business
 
 import co.adhoclabs.analytics.AnalyticsManager
-import co.adhoclabs.template.analytics.events.AlbumCreatedAnalyticsEvent
+import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, Song}
 import java.util.UUID
@@ -21,7 +21,7 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: Execution
 
   override def create(createAlbumRequest: CreateAlbumRequest): Future[AlbumWithSongs] = {
     albumDao.create(AlbumWithSongs(createAlbumRequest)) map { albumWithSongs =>
-      analyticsManager.trackEvent(AlbumCreatedAnalyticsEvent(albumWithSongs.album.id))
+      analyticsManager.trackEvent(AlbumCreatedAnalyticsEvent(albumWithSongs.album))
       albumWithSongs
     }
   }

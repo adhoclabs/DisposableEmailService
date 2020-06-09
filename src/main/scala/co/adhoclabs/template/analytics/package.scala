@@ -14,6 +14,7 @@ package object analytics {
 
   private val queueNames: List[String] = List(
     config.getString("co.adhoclabs.braze-sdk.queue_name"),
+    config.getString("co.adhoclabs.braze-sdk.attributes_queue_name"),
     config.getString("co.adhoclabs.amplitude-sdk.queue_name")
   )
 
