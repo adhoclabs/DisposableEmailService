@@ -3,7 +3,7 @@ package co.adhoclabs.template.business
 import co.adhoclabs.analytics.AnalyticsManager
 import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
-import co.adhoclabs.template.exceptions.AlbumAlreadyExistsException
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException}
 import co.adhoclabs.template.models._
 import scala.concurrent.Future
 
@@ -63,6 +63,12 @@ class AlbumManagerTest extends BusinessTestBase {
 
       albumManager.create(createAlbumRequest) map { albumWithSongs: AlbumWithSongs =>
         assert(albumWithSongs == expectedAlbumWithSongs)
+      }
+    }
+
+    it("should call AlbumDao.create and throw an exception for an album with no songs") {
+      recoverToSucceededIf[NoSongsInAlbumException] {
+        albumManager.create(createAlbumRequest.copy(songs = List.empty[CreateSongRequest]))
       }
     }
 

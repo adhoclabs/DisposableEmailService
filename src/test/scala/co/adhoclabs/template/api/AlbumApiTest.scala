@@ -3,7 +3,8 @@ package co.adhoclabs.template.api
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
-import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
+import co.adhoclabs.model.ErrorResponse
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest}
 import scala.concurrent.Future
 import spray.json._
@@ -108,6 +109,22 @@ class AlbumApiTest extends ApiTestBase {
 
       Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.BadRequest)
+        assert(responseAs[ErrorResponse].error == s"album already exists")
+      }
+    }
+
+    it("should return a 400 response when the album has no songs") {
+      val createAlbumRequestNoSongs = createAlbumRequest.copy(songs = List.empty[CreateSongRequest])
+
+      (albumManager.create _)
+          .expects(createAlbumRequestNoSongs)
+          .throwing(NoSongsInAlbumException(expectedAlbumWithSongs.album))
+
+      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequestNoSongs.toJson}""")
+
+      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.BadRequest)
+        assert(responseAs[ErrorResponse].error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs.")
       }
     }
   }

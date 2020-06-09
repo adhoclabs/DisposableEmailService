@@ -3,6 +3,7 @@ package co.adhoclabs.template.api
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
+import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import java.util.UUID
@@ -70,6 +71,7 @@ class SongApiTest extends ApiTestBase {
 
       Post(s"/songs", HttpEntity(`application/json`, s"""${createSongRequest.toJson}""")) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.BadRequest)
+        assert(responseAs[ErrorResponse].error == "Song not created")
       }
     }
   }

@@ -3,6 +3,7 @@ package co.adhoclabs.template.business
 import co.adhoclabs.analytics.AnalyticsManager
 import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
+import co.adhoclabs.template.exceptions.NoSongsInAlbumException
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,6 +21,12 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: Execution
   override def get(id: UUID): Future[Option[AlbumWithSongs]] = albumDao.get(id)
 
   override def create(createAlbumRequest: CreateAlbumRequest): Future[AlbumWithSongs] = {
+    val albumWithSongs: AlbumWithSongs = AlbumWithSongs(createAlbumRequest)
+
+    // This is here just to demonstrate exception handling and logging
+    // You can trigger this exception to be thrown by attempting a POST request with an album with no songs
+    if (createAlbumRequest.songs.isEmpty) return Future.failed(NoSongsInAlbumException(albumWithSongs.album))
+
     albumDao.create(AlbumWithSongs(createAlbumRequest)) map { albumWithSongs =>
       analyticsManager.trackEvent(AlbumCreatedAnalyticsEvent(albumWithSongs.album))
       albumWithSongs
