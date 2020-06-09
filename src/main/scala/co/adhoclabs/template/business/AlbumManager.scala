@@ -3,7 +3,7 @@ package co.adhoclabs.template.business
 import co.adhoclabs.analytics.AnalyticsManager
 import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, Song}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 

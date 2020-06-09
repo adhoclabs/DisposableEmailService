@@ -1,18 +1,16 @@
 package co.adhoclabs.template.data
 
-import java.util.UUID
-
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
-import co.adhoclabs.template.exceptions.{AlbumNotCreatedException, AlbumNotDeletedException}
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
 import co.adhoclabs.template.models.Genre._
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, Genre, Song}
+import java.util.UUID
+import org.postgresql.util.PSQLException
 import org.slf4j.{Logger, LoggerFactory}
-import slick.dbio.Effect
-import slick.jdbc.{GetResult, SetParameter}
-import slick.lifted.ProvenShape
-import slick.sql.FixedSqlAction
-
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
+import slick.jdbc.GetResult
+import slick.lifted.ProvenShape
 
 trait AlbumDao {
   def get(id: UUID): Future[Option[AlbumWithSongs]]
@@ -38,6 +36,8 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
   private type AlbumsQuery = Query[AlbumsTable, Album, Seq]
 
   override def get(id: UUID): Future[Option[AlbumWithSongs]] = {
+    // An example of how to write a join in plain SQL
+    // You can also do joins in slick, but if the compiled query ends up being unnecessarily complex, this is preferred
     val queryAction =
       sql"""
         select a.id, a.title, a.genre, s.id, s.title, s.album_id, s.album_position
@@ -60,10 +60,28 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
   }
 
   override def create(albumToCreate: AlbumWithSongs): Future[AlbumWithSongs] = {
+
+    val createAlbumAction = (albums.returning(albums) += albumToCreate.album).asTry map {
+      case Success(a: Album) => a
+      case Failure(e: PSQLException) =>
+        if (isDuplicateKeyException(e))
+          throw AlbumAlreadyExistsException(e.getServerErrorMessage.getMessage)
+        else
+          throw e
+    }
+
+    val createSongsAction =
+      if (albumToCreate.songs.nonEmpty)
+        songs.returning(songs) ++= albumToCreate.songs
+      else
+        DBIO.successful(List.empty[Song])
+
+    // A readable way to concatenate database actions
     val create = for {
-      _ <- albums.returning(albums) += albumToCreate.album
-      _ <- if (albumToCreate.songs.nonEmpty) songs.returning(songs) ++= albumToCreate.songs else DBIO.successful(List.empty[Song])
+      _ <- createAlbumAction
+      _ <- createSongsAction
     } yield ()
+
     for {
       _ <- db.run(create.transactionally)
       albumWithSongsO <- get(albumToCreate.album.id)
@@ -74,6 +92,8 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
   }
 
   override def update(album: Album): Future[Option[Album]] = {
+    // we need to explicitly typecast genre here in plain sql because otherwise slick treats it as a string rather than
+    // an enum
     val query =
       sql"""
         update albums
@@ -96,21 +116,23 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
       albums
         .filterById(id)
         .delete
-    ) map {
-      case count if count != 1 =>
-        throw AlbumNotDeletedException(id)
-      case count =>
-        count
-    }
+    )
   }
 
+  // adding helper methods here with the return type of AlbumsQuery allows for readable chaining
   implicit class AlbumsQueries(val query: AlbumsQuery) {
     def filterById(id: UUID): AlbumsQuery =
       query.filter(_.id === id)
   }
 
+  // when using plain SQL, we have to provide these `GetResult`s in order to convert between the result row
+  // and the case class instance.
+  // the `UuidSupport` trait in `SlickPostgresProfile` provides the `nextUuid` method, since there isn't out-of-the-box
+  // conversion for postgres UUID type fields.
+  // each field can also be written as `r.<<` for brevity, which will call the correct `.nextX` method -- here we used the
+  // type-specific methods for compilation-time type safety.
   implicit val getAlbumResult: GetResult[Album] =
-    GetResult(r =>  Album(r.nextUuid, r.nextString, Genre.withName(r.nextString)))
+    GetResult(r => Album(r.nextUuid, r.nextString, Genre.withName(r.nextString)))
 
   implicit val getAlbumSongTupleResult: GetResult[(Album, Option[Song])] =
     GetResult { r => (

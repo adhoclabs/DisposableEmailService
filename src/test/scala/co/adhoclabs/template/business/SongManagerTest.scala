@@ -1,7 +1,8 @@
 package co.adhoclabs.template.business
 
 import co.adhoclabs.template.data.SongDao
-import co.adhoclabs.template.models.{CreateSongRequest, Genre, Song}
+import co.adhoclabs.template.exceptions.SongAlreadyExistsException
+import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import java.util.UUID
 import scala.concurrent.Future
 
@@ -26,7 +27,7 @@ class SongManagerTest extends BusinessTestBase {
   )
 
   describe("get") {
-    it("should return a song with the supplied id") {
+    it("should return a song with the supplied id when it exists") {
       (songDao.get _)
         .expects(expectedSong.id)
         .returning(Future.successful(Some(expectedSong)))
@@ -34,6 +35,17 @@ class SongManagerTest extends BusinessTestBase {
       songManager.get(expectedSong.id) flatMap {
         case Some(song: Song) => assert(song == song)
         case None => fail
+      }
+    }
+
+    it("should return None when the song doesn't exist") {
+      (songDao.get _)
+          .expects(expectedSong.id)
+          .returning(Future.successful(None))
+
+      songManager.get(expectedSong.id) flatMap {
+        case None => succeed
+        case Some(_: Song) => fail
       }
     }
   }
@@ -47,9 +59,18 @@ class SongManagerTest extends BusinessTestBase {
           })
           .returning(Future.successful(expectedSong))
 
-      songManager.create(createSongRequest) flatMap { createdSong: Song =>
+      songManager.create(createSongRequest) map { createdSong: Song =>
         assert(createdSong == expectedSong)
+      }
+    }
 
+    it("should throw an exception from SongDao.create when attempting to create a song with an ID that already exists") {
+      (songDao.create _)
+          .expects(*)
+          .returning(Future.failed(SongAlreadyExistsException("song already exists")))
+
+      recoverToSucceededIf[SongAlreadyExistsException] {
+        songManager.create(createSongRequest)
       }
     }
   }
@@ -60,15 +81,21 @@ class SongManagerTest extends BusinessTestBase {
           .expects(expectedSong)
           .returning(Future.successful(Some(expectedSong)))
 
-      songManager.update(expectedSong) flatMap {
+      songManager.update(expectedSong) map {
         case Some(updatedSong: Song) => assert(updatedSong == expectedSong)
         case None => fail
       }
     }
 
-//    it("should call SongDao.update and return error if song does not exist") {
-//
-//    }
-  }
+    it("should call songDao.update and return None if the song doesn't exist") {
+      (songDao.update _)
+          .expects(*)
+          .returning(Future.successful(None))
 
+      songManager.update(expectedSong) map {
+        case None => succeed
+        case Some(_: Song) => fail
+      }
+    }
+  }
 }

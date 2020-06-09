@@ -1,6 +1,5 @@
 package co.adhoclabs.template.models
 
-import co.adhoclabs.template.models.Genre.Genre
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 object Genre extends Enumeration with DefaultJsonProtocol {

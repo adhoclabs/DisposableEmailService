@@ -1,15 +1,15 @@
 package co.adhoclabs.template.data
 
 import java.util.UUID
-
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
-import co.adhoclabs.template.exceptions.SongNotDeletedException
+import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.Song
+import org.postgresql.util.PSQLException
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.GetResult
 import slick.lifted.ProvenShape
-
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 trait SongDao {
   def get(id: UUID): Future[Option[Song]]
@@ -46,14 +46,28 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
 
   override def create(song: Song): Future[Song] = {
     db.run(
-      songs.returning(songs) += song
-    )
+      (songs.returning(songs) += song).asTry
+    ) map {
+      case Success(s: Song) => s
+      case Failure(e: PSQLException) =>
+        if (isDuplicateKeyException(e))
+          throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
+        else
+          throw e
+    }
   }
 
   override def createMany(songsToAdd: List[Song]): Future[List[Song]] = {
     db.run(
-      songs.returning(songs) ++= songsToAdd
-    ).map(_.toList)
+      (songs.returning(songs) ++= songsToAdd).asTry
+    ) map {
+      case Success(s: Seq[Song]) => s.toList
+      case Failure(e: PSQLException) =>
+        if (isDuplicateKeyException(e))
+          throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
+        else
+          throw e
+      }
   }
 
   override def update(song: Song): Future[Option[Song]] = {
@@ -74,17 +88,13 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
       songs
         .filterById(id)
         .delete
-    ) map {
-      case count if count != 1 =>
-        throw SongNotDeletedException(id)
-      case count =>
-        count
-    }
+    )
   }
 
   implicit class SongsQueries(val query: SongsQuery) {
     def filterById(id: UUID): SongsQuery =
       query.filter(_.id === id)
   }
+
   implicit val getSongResult: GetResult[Song] = GetResult(r => Song(r.nextUuid, r.nextString, r.nextUuid, r.nextInt))
 }

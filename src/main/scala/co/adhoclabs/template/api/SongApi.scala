@@ -1,11 +1,10 @@
 package co.adhoclabs.template.api
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.PathMatchers.Segment
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.SongManager
-import co.adhoclabs.template.models.{CreateAlbumRequest, CreateSongRequest, Song}
+import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import java.util.UUID
 
 trait SongApi extends ApiBase {
@@ -33,8 +32,10 @@ trait SongApi extends ApiBase {
   }
 
   def getSong(id: UUID): Route =
-    complete {
-      songManager.get(id)
+    rejectEmptyResponse {
+      complete {
+        songManager.get(id)
+      }
     }
 
   def postSong: Route = entity(as[CreateSongRequest]) { songRequest: CreateSongRequest =>
@@ -44,8 +45,10 @@ trait SongApi extends ApiBase {
   }
 
   def putSong(id: UUID): Route = entity(as[Song]) { song: Song =>
-    complete {
-      songManager.update(song)
+    rejectEmptyResponse {
+      complete {
+        songManager.update(song)
+      }
     }
   }
 }

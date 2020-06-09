@@ -2,7 +2,6 @@ package co.adhoclabs.template.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.PathMatchers.Segment
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
@@ -37,8 +36,10 @@ trait AlbumApi extends ApiBase {
   }
 
   def getAlbumRoute(id: UUID): Route =
-    complete {
-      albumManager.get(id)
+    rejectEmptyResponse {
+      complete {
+        albumManager.get(id)
+      }
     }
 
 
@@ -51,8 +52,10 @@ trait AlbumApi extends ApiBase {
 
   def putAlbumRoute(id: UUID): Route =
     entity(as[Album]) { album: Album =>
-      complete {
-        albumManager.update(album)
+      rejectEmptyResponse {
+        complete {
+          albumManager.update(album)
+        }
       }
     }
 }

@@ -8,3 +8,11 @@ abstract class ValidationException(val errorResponse: ErrorResponse) extends Exc
 case class NoSongsInAlbumException(album: Album) extends ValidationException(
     ErrorResponse(s"Not creating album entitled ${album.title} because it had no songs.")
 )
+
+case class SongAlreadyExistsException(duplicateKeyMessage: String) extends ValidationException(
+    ErrorResponse(duplicateKeyMessage)
+)
+
+case class AlbumAlreadyExistsException(duplicateKeyMessage: String) extends ValidationException(
+    ErrorResponse(duplicateKeyMessage)
+)

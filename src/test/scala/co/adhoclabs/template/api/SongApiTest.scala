@@ -3,6 +3,7 @@ package co.adhoclabs.template.api
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
+import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import java.util.UUID
 import scala.concurrent.Future
@@ -27,7 +28,7 @@ class SongApiTest extends ApiTestBase {
   )
 
   describe("GET /songs/:id") {
-    it("should call SongManager.get") {
+    it("should call SongManager.get and return a 200 response with a song body when song exists") {
 
       (songManager.get _)
         .expects(expectedSong.id)
@@ -36,6 +37,16 @@ class SongApiTest extends ApiTestBase {
       Get(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.OK)
         assert(responseAs[Song] == expectedSong)
+      }
+    }
+
+    it("should call SongManager.get and return a 404 response song doesn't exist") {
+      (songManager.get _)
+          .expects(expectedSong.id)
+          .returning(Future.successful(None))
+
+      Get(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.NotFound)
       }
     }
   }
@@ -52,19 +63,19 @@ class SongApiTest extends ApiTestBase {
       }
     }
 
-    it("should call SongManager.create and return a 500 response when creation is not successful") {
+    it("should call SongManager.create and return a 400 response when creation is not successful") {
       (songManager.create _)
           .expects(createSongRequest)
-          .throwing(new Exception("Song not created")) // todo: use HttpExceptions from model here
+          .throwing(SongAlreadyExistsException("Song not created"))
 
       Post(s"/songs", HttpEntity(`application/json`, s"""${createSongRequest.toJson}""")) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.InternalServerError)
+        assert(status == StatusCodes.BadRequest)
       }
     }
   }
 
   describe("PUT /songs/:songId") {
-    it("should call SongManager.update") {
+    it("should call SongManager.update and return a 200 with an update song when it exists") {
       (songManager.update _)
           .expects(expectedSong)
           .returning(Future.successful(Some(expectedSong)))
@@ -72,6 +83,16 @@ class SongApiTest extends ApiTestBase {
       Put(s"/songs/${expectedSong.id}", HttpEntity(`application/json`, s"""${expectedSong.toJson}""")) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.OK)
         assert(responseAs[Song] == expectedSong)
+      }
+    }
+
+    it("should call SongManager.update and return a 404 when song doesn't exist") {
+      (songManager.update _)
+          .expects(expectedSong)
+          .returning(Future.successful(None))
+
+      Put(s"/songs/${expectedSong.id}", HttpEntity(`application/json`, s"""${expectedSong.toJson}""")) ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.NotFound)
       }
     }
   }

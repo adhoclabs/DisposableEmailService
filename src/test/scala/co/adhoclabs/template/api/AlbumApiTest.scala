@@ -3,13 +3,8 @@ package co.adhoclabs.template.api
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest, Song}
-import co.adhoclabs.template.models.Genre._
-import java.util.UUID
-
-import co.adhoclabs.model.ErrorResponse
-import co.adhoclabs.template.exceptions.AlbumNotCreatedException
-
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest}
 import scala.concurrent.Future
 import spray.json._
 
@@ -29,7 +24,7 @@ class AlbumApiTest extends ApiTestBase {
   )
 
   describe("GET /albums/:id") {
-    it("should call AlbumManager.get") {
+    it("should call AlbumManager.get and return a 200 with an album with songs body when album exists") {
       (albumManager.get _)
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
@@ -39,17 +34,41 @@ class AlbumApiTest extends ApiTestBase {
         assert(responseAs[AlbumWithSongs] == expectedAlbumWithSongs)
       }
     }
+
+    it("should call AlbumManager.get and return a 404 when album doesn't exist") {
+      (albumManager.get _)
+          .expects(expectedAlbumWithSongs.album.id)
+          .returning(Future.successful(None))
+
+      Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.NotFound)
+      }
+    }
   }
 
   describe("PUT /albums/:id") {
-    it("should call AlbumManager.update") {
+    it("should call AlbumManager.update and return updated song when it exists") {
       (albumManager.update _)
           .expects(expectedAlbumWithSongs.album)
           .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
 
-      Put(s"/albums/${expectedAlbumWithSongs.album.id}", HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")) ~> Route.seal(routes) ~> check {
+      val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
+
+      Put(s"/albums/${expectedAlbumWithSongs.album.id}", requestEntity) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.OK)
         assert(responseAs[Album] == expectedAlbumWithSongs.album)
+      }
+    }
+
+    it("should call AlbumManager.update and return a 404 when album doesn't exist") {
+      (albumManager.update _)
+          .expects(expectedAlbumWithSongs.album)
+          .returning(Future.successful(None))
+
+      val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
+
+      Put(s"/albums/${expectedAlbumWithSongs.album.id}", requestEntity) ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.NotFound)
       }
     }
   }
@@ -60,7 +79,9 @@ class AlbumApiTest extends ApiTestBase {
           .expects(createAlbumRequest)
           .returning(Future.successful(expectedAlbumWithSongs))
 
-      Post(s"/albums", HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")) ~> Route.seal(routes) ~> check {
+      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+
+      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.Created)
         assert(responseAs[AlbumWithSongs] == expectedAlbumWithSongs)
       }
@@ -71,8 +92,22 @@ class AlbumApiTest extends ApiTestBase {
           .expects(createAlbumRequest)
           .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
 
-      Post(s"/albums", HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")) ~> Route.seal(routes) ~> check {
+      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+
+      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.InternalServerError)
+      }
+    }
+
+    it("should call AlbumManager.create and return a 400 response when album already exists") {
+      (albumManager.create _)
+          .expects(createAlbumRequest)
+          .throwing(AlbumAlreadyExistsException("album already exists"))
+
+      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+
+      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
+        assert(status == StatusCodes.BadRequest)
       }
     }
   }

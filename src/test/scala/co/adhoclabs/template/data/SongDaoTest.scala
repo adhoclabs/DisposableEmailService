@@ -1,8 +1,9 @@
 package co.adhoclabs.template.data
 
+import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.{AlbumWithSongs, Song}
+import java.util.UUID
 import org.scalatest.FutureOutcome
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -24,10 +25,12 @@ class SongDaoTest extends DataTestBase {
     complete {
       super.withFixture(test)
     } lastly {
+      val deleteF1 = albumDao.delete(existingAlbum.id)
+      val deleteF2 = albumDao.delete(existingAlbum2.id)
       Await.result(
         for {
-          _ <- albumDao.delete(existingAlbum.id)
-          _ <- albumDao.delete(existingAlbum2.id)
+          _ <- deleteF1
+          _ <- deleteF2
         } yield (),
         2.second)
     }
@@ -52,7 +55,7 @@ class SongDaoTest extends DataTestBase {
                 songDao.delete(expectedSong.id) flatMap { count =>
                   assert(count == 1)
 
-                  songDao.get(expectedSong.id) flatMap { a =>
+                  songDao.get(expectedSong.id) map { a =>
                     assert(a.isEmpty)
                   }
                 }
@@ -63,9 +66,60 @@ class SongDaoTest extends DataTestBase {
       }
     }
   }
-//
-//  describe("createMany") {
-//    it("should ")
-//  }
 
+  describe("createMany") {
+    it("should create multiple songs") {
+      val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ generateSongs(existingAlbum2.id, 3)
+      songDao.createMany(expectedSongs) map { songs: List[Song] =>
+        assert(songs.sortBy(_.id) == expectedSongs.sortBy(_.id))
+      }
+    }
+  }
+
+  describe("get") {
+    it("should return None for a song that doesn't exist") {
+      songDao.get(UUID.randomUUID) map { songO: Option[Song] =>
+        assert(songO.isEmpty)
+      }
+    }
+  }
+
+  describe("update") {
+    it("should return None for a song that doesn't exist") {
+      songDao.update(generateSong(existingAlbum.id, 1)) map { songO: Option[Song] =>
+        assert(songO.isEmpty)
+      }
+    }
+  }
+
+  describe("create") {
+    it("should throw a validation exception when the primary key already exists") {
+      val existingSong = generateSong(existingAlbum.id, 1)
+      songDao.create(existingSong) flatMap { _ =>
+        recoverToSucceededIf[SongAlreadyExistsException] {
+          songDao.create(existingSong)
+        }
+      }
+    }
+  }
+
+  describe("delete") {
+    it("should return 0 if the song doesn't exist when we attempt to delete it") {
+      songDao.delete(UUID.randomUUID) map { rowsAffected: Int =>
+        assert(rowsAffected == 0)
+      }
+    }
+  }
+
+  describe("createMany") {
+    it("should throw a validation exception when the primary key for one of the songs already exists") {
+      val existingSong = generateSong(existingAlbum.id, 1)
+      songDao.create(existingSong) flatMap { _ =>
+        val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ List(existingSong)
+        recoverToSucceededIf[SongAlreadyExistsException] {
+          songDao.createMany(expectedSongs)
+        }
+      }
+    }
+  }
 }
