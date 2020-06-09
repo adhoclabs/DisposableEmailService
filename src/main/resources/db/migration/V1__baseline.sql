@@ -1,4 +1,5 @@
 create type genre as enum(
+    'NoGenre'
     'Rock',
     'HipHop',
     'Classical',

@@ -59,5 +59,3 @@ trait UuidSupport {
       pp.setObjectOption(u, JDBCType.OTHER.getVendorTypeNumber)
   }
 }
-
-
