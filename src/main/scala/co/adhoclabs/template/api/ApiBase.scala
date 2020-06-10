@@ -23,17 +23,19 @@ trait ApiBase extends JsonSupport {
           s"${if (!request.entity.httpEntity.isKnownEmpty) "request body: " + Unmarshal(request.entity).to[String] else ""} " +
           s"response body: ${Unmarshal(response.entity).to[String]}"
     )
+    // This ensures that these logs are the same format as logs elsewhere in the service
     None
   }
 
   private def logRequestRejection(request: HttpRequest, rejections: Seq[Rejection]): Option[LogEntry] = {
-    logger.info(
+    logger.error(
       s"REJECTED: " +
           s"${request.method.name} " +
           s"${request.uri} " +
           s"${if (!request.entity.httpEntity.isKnownEmpty) "request body: " + Unmarshal(request.entity).to[String] else ""} " +
           s"rejections: ${rejections.mkString(", ")}"
     )
+    // This ensures that these logs are the same format as logs elsewhere in the service
     None
   }
 

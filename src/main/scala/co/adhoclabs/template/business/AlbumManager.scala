@@ -6,6 +6,9 @@ import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.exceptions.NoSongsInAlbumException
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest}
 import java.util.UUID
+
+import org.slf4j.{Logger, LoggerFactory}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AlbumManager extends BusinessBase {
@@ -15,6 +18,8 @@ trait AlbumManager extends BusinessBase {
 }
 
 class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: ExecutionContext, analyticsManager: AnalyticsManager) extends AlbumManager {
+  override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   // Using this slightly contrived logic where an album must come with songs
   // so we can demonstrate how to insert multiple rows in a transaction
   // and how to perform a join in Slick

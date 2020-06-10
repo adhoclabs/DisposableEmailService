@@ -23,7 +23,7 @@ object AlbumWithSongs {
     )
     AlbumWithSongs(
       album = album,
-      songs = createRequest.songs.map(Song(_))
+      songs = createRequest.songs.map(Song.apply)
     )
   }
 }

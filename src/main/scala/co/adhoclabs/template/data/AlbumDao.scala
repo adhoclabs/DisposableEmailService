@@ -29,7 +29,7 @@ case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
   override def * : ProvenShape[Album] = (id, title, genre).mapTo[Album]
 }
 
-class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends BaseDao with AlbumDao {
+class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends DaoBase with AlbumDao {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
   lazy val albums = TableQuery[AlbumsTable]
   lazy val songs = TableQuery[SongsTable]
@@ -102,10 +102,9 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
           genre = ${album.genre.toString}::genre
         where id = ${album.id}
         returning id, title, genre
-         """
+         """.as[Album]
     db.run(
       query
-        .as[Album]
         .headOption
     )
   }

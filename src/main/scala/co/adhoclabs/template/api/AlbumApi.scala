@@ -18,6 +18,8 @@ trait AlbumApi extends ApiBase {
           postAlbumRoute
         }
       },
+      // Be aware that legacy burner users may have ids that are not valid UUIDs,
+      // so we shouldn't make user id fields UUIDs
       pathPrefix(JavaUUID) { id: UUID =>
         concat (
           pathEnd {

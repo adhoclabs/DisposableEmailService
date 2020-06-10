@@ -1,7 +1,7 @@
 package co.adhoclabs.template.business
 
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 
 trait BusinessBase {
-  val logger = LoggerFactory.getLogger(this.getClass)
+  protected val logger: Logger
 }

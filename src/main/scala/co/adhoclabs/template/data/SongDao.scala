@@ -30,7 +30,7 @@ case class SongsTable(tag: Tag) extends Table[Song](tag, "songs") {
   override def * : ProvenShape[Song] = (id, title, albumId, albumPosition).mapTo[Song]
 }
 
-class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends BaseDao with SongDao {
+class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends DaoBase with SongDao {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
   lazy val songs = TableQuery[SongsTable]
   private type SongsQuery = Query[SongsTable, Song, Seq]
