@@ -25,6 +25,8 @@ class SongDaoTest extends DataTestBase {
     complete {
       super.withFixture(test)
     } lastly {
+      // Since all songs need an album and songs cascade delete,
+      // just need to delete these two to clean up the whole test
       val deleteF1 = albumDao.delete(existingAlbum.id)
       val deleteF2 = albumDao.delete(existingAlbum2.id)
       Await.result(
