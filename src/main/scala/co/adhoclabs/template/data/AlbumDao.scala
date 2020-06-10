@@ -63,11 +63,13 @@ class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionCon
 
     val createAlbumAction = (albums.returning(albums) += albumToCreate.album).asTry map {
       case Success(a: Album) => a
-      case Failure(e: PSQLException) =>
-        if (isDuplicateKeyException(e))
-          throw AlbumAlreadyExistsException(e.getServerErrorMessage.getMessage)
+      case Failure(p: PSQLException) =>
+        if (DaoBase.isUniqueConstraintViolation(p))
+          throw AlbumAlreadyExistsException(p.getServerErrorMessage.getMessage)
         else
-          throw e
+          throw p
+      case Failure(t: Throwable) =>
+        throw t
     }
 
     val createSongsAction =

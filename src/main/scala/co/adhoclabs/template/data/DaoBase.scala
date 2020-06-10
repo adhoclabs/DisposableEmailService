@@ -7,7 +7,10 @@ import org.postgresql.util.PSQLException
 trait DaoBase {
   protected val logger: Logger
   protected val db: Database = databaseConnection.db
+}
 
-  protected def isDuplicateKeyException(e: PSQLException): Boolean =
-    e.getServerErrorMessage.getMessage.contains("duplicate key value")
+object DaoBase {
+  def isUniqueConstraintViolation(e: PSQLException): Boolean =
+  //https://www.postgresql.org/docs/11/errcodes-appendix.html
+    e.getSQLState == "23505"
 }

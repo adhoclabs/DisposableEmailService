@@ -50,10 +50,12 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
     ) map {
       case Success(s: Song) => s
       case Failure(e: PSQLException) =>
-        if (isDuplicateKeyException(e))
+        if (DaoBase.isUniqueConstraintViolation(e))
           throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
         else
           throw e
+      case Failure(t: Throwable) =>
+        throw t
     }
   }
 
@@ -63,10 +65,12 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
     ) map {
       case Success(s: Seq[Song]) => s.toList
       case Failure(e: PSQLException) =>
-        if (isDuplicateKeyException(e))
+        if (DaoBase.isUniqueConstraintViolation(e))
           throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
         else
           throw e
+      case Failure(t: Throwable) =>
+        throw t
       }
   }
 

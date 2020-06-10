@@ -5,6 +5,8 @@ import co.adhoclabs.template.models.{Album, AlbumWithSongs}
 import co.adhoclabs.template.models.Genre._
 import java.util.UUID
 
+import org.postgresql.util.PSQLException
+
 class AlbumDaoTest extends DataTestBase {
   describe("AlbumDao") {
     describe("create, get, update, delete") {
@@ -85,6 +87,19 @@ class AlbumDaoTest extends DataTestBase {
           recoverToSucceededIf[AlbumAlreadyExistsException] {
             albumDao.create(existingAlbumWithSongs)
           }
+        }
+      }
+    }
+
+    describe("create") {
+      it("should throw a unique constraint violation exception when duplicate songs are added") {
+        val album = generateAlbum()
+        val songs = generateSongs(album.id, 3)
+        val albumWithDuplicateSongs = AlbumWithSongs(album, songs ++ songs)
+        recoverToExceptionIf[PSQLException] {
+          albumDao.create(albumWithDuplicateSongs)
+        } map { e =>
+          assert(DaoBase.isUniqueConstraintViolation(e))
         }
       }
     }
