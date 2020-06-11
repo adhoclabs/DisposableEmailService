@@ -17,8 +17,8 @@ import scala.util.{Failure, Success}
 
 object Main extends App {
 
-  implicit val system: ActorSystem = Dependencies.system
-  implicit val executor: ExecutionContext = Dependencies.executor
+  implicit val system: ActorSystem = Dependencies.actorSystem
+  implicit val executor: ExecutionContext = Dependencies.executionContext
 
   val config = Dependencies.config
 
@@ -42,8 +42,8 @@ object Dependencies {
 
   implicit val config: Config = Configuration.config
 
-  implicit val system: ActorSystem = ActorSystem("template")
-  implicit val executor: ExecutionContext = system.dispatcher
+  implicit val actorSystem: ActorSystem = ActorSystem("template")
+  implicit val executionContext: ExecutionContext = actorSystem.dispatcher
 
   private val dbConfigReference: String = "co.adhoclabs.template.dbConfig"
   implicit val db: Database = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)

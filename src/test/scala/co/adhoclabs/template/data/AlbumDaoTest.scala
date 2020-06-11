@@ -8,9 +8,9 @@ import co.adhoclabs.template.models.{Album, AlbumWithSongs}
 import org.postgresql.util.PSQLException
 import org.scalatest.FutureOutcome
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.jdk.CollectionConverters._
 
 class AlbumDaoTest extends DataTestBase {
   // Since all songs need an album and songs cascade delete,
