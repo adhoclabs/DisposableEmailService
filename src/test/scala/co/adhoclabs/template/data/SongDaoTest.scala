@@ -3,8 +3,10 @@ package co.adhoclabs.template.data
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.{AlbumWithSongs, Song}
 import java.util.UUID
+
 import org.scalatest.FutureOutcome
-import scala.concurrent.Await
+
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 class SongDaoTest extends DataTestBase {
@@ -12,29 +14,23 @@ class SongDaoTest extends DataTestBase {
   val existingAlbum = generateAlbum()
   val existingAlbum2 = generateAlbum()
 
+  // Note that this will be run for every test
   override def withFixture(test: NoArgAsyncTest): FutureOutcome = {
-    val createF1 = albumDao.create(AlbumWithSongs(existingAlbum, List.empty[Song]))
-    val createF2 = albumDao.create(AlbumWithSongs(existingAlbum2, List.empty[Song]))
-    Await.result(
-      for {
-        _ <- createF1
-        _ <- createF2
-      } yield (),
-      2.second)
+    val albumsToCreate = List(existingAlbum, existingAlbum2)
+    val createFutures = albumsToCreate.map { album =>
+      albumDao.create(AlbumWithSongs(album, List.empty[Song]))
+    }
+    Await.result(Future.sequence(createFutures), 2.second)
 
     complete {
       super.withFixture(test)
     } lastly {
       // Since all songs need an album and songs cascade delete,
-      // just need to delete these two to clean up the whole test
-      val deleteF1 = albumDao.delete(existingAlbum.id)
-      val deleteF2 = albumDao.delete(existingAlbum2.id)
-      Await.result(
-        for {
-          _ <- deleteF1
-          _ <- deleteF2
-        } yield (),
-        2.second)
+      // just need to delete the albums to clean up the whole test
+      val deleteFutures = albumsToCreate.map { album =>
+        albumDao.delete(album.id)
+      }
+      Await.result(Future.sequence(deleteFutures), 2.second)
     }
   }
 
@@ -70,6 +66,16 @@ class SongDaoTest extends DataTestBase {
   }
 
   describe("createMany") {
+    it("should throw a validation exception when the primary key for one of the songs already exists") {
+      val existingSong = generateSong(existingAlbum.id, 1)
+      songDao.create(existingSong) flatMap { _ =>
+        val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ List(existingSong)
+        recoverToSucceededIf[SongAlreadyExistsException] {
+          songDao.createMany(expectedSongs)
+        }
+      }
+    }
+
     it("should create multiple songs") {
       val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ generateSongs(existingAlbum2.id, 3)
       songDao.createMany(expectedSongs) map { songs: List[Song] =>
@@ -109,18 +115,6 @@ class SongDaoTest extends DataTestBase {
     it("should return 0 if the song doesn't exist when we attempt to delete it") {
       songDao.delete(UUID.randomUUID) map { rowsAffected: Int =>
         assert(rowsAffected == 0)
-      }
-    }
-  }
-
-  describe("createMany") {
-    it("should throw a validation exception when the primary key for one of the songs already exists") {
-      val existingSong = generateSong(existingAlbum.id, 1)
-      songDao.create(existingSong) flatMap { _ =>
-        val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ List(existingSong)
-        recoverToSucceededIf[SongAlreadyExistsException] {
-          songDao.createMany(expectedSongs)
-        }
       }
     }
   }

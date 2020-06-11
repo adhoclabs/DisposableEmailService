@@ -31,6 +31,7 @@ case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
 }
 
 class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext) extends DaoBase with AlbumDao {
+
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   lazy val albums = TableQuery[AlbumsTable]
