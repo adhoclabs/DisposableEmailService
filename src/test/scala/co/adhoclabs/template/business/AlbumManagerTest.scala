@@ -34,7 +34,7 @@ class AlbumManagerTest extends BusinessTestBase {
 
       albumManager.get(expectedAlbumWithSongs.album.id) flatMap {
         case None => succeed
-        case Some(_: Song) => fail
+        case Some(_) => fail
       }
     }
   }

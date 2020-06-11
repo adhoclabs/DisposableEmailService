@@ -4,9 +4,8 @@ import org.slf4j.Logger
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import org.postgresql.util.PSQLException
 
-trait DaoBase {
+abstract class DaoBase(implicit val db: Database) {
   protected val logger: Logger
-  protected val db: Database = databaseConnection.db
 }
 
 object DaoBase {

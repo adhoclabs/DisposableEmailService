@@ -1,6 +1,7 @@
 package co.adhoclabs.template.data
 
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
+import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
 import co.adhoclabs.template.models.Genre._
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, Genre, Song}
@@ -29,10 +30,12 @@ case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
   override def * : ProvenShape[Album] = (id, title, genre).mapTo[Album]
 }
 
-class AlbumDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends DaoBase with AlbumDao {
+class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext) extends DaoBase with AlbumDao {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   lazy val albums = TableQuery[AlbumsTable]
   lazy val songs = TableQuery[SongsTable]
+
   private type AlbumsQuery = Query[AlbumsTable, Album, Seq]
 
   override def get(id: UUID): Future[Option[AlbumWithSongs]] = {

@@ -6,12 +6,17 @@ import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
 import java.util.UUID
+import org.slf4j.{Logger, LoggerFactory}
 
 trait AlbumApi extends ApiBase {
+  val routes: Route
+}
 
-  implicit val albumManager: AlbumManager
+class AlbumApiImpl(implicit albumManager: AlbumManager) extends AlbumApi {
 
-  val albumRoutes: Route = pathPrefix("albums") {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  override val routes: Route = pathPrefix("albums") {
     concat (
       pathEnd {
         post {

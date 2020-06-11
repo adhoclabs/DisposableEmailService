@@ -6,12 +6,17 @@ import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.SongManager
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import java.util.UUID
+import org.slf4j.{Logger, LoggerFactory}
 
 trait SongApi extends ApiBase {
+  val routes: Route
+}
 
-  implicit val songManager: SongManager
+class SongApiImpl(implicit songManager: SongManager) extends SongApi {
 
-  val songRoutes: Route = pathPrefix("songs") {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  override val routes: Route = pathPrefix("songs") {
     concat(
       pathEnd {
         post {

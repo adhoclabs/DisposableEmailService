@@ -2,6 +2,7 @@ package co.adhoclabs.template.data
 
 import java.util.UUID
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
+import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.Song
 import org.postgresql.util.PSQLException
@@ -30,17 +31,19 @@ case class SongsTable(tag: Tag) extends Table[Song](tag, "songs") {
   override def * : ProvenShape[Song] = (id, title, albumId, albumPosition).mapTo[Song]
 }
 
-class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionContext: ExecutionContext) extends DaoBase with SongDao {
+class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext) extends DaoBase with SongDao {
+
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   lazy val songs = TableQuery[SongsTable]
   private type SongsQuery = Query[SongsTable, Song, Seq]
 
   override def get(id: UUID): Future[Option[Song]] = {
     db.run(
       songs
-        .filterById(id)
-        .result
-        .headOption
+          .filterById(id)
+          .result
+          .headOption
     )
   }
 
@@ -71,14 +74,14 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
           throw e
       case Failure(t: Throwable) =>
         throw t
-      }
+    }
   }
 
   override def update(song: Song): Future[Option[Song]] = {
     db.run(
       songs
-        .filterById(song.id)
-        .update(song)
+          .filterById(song.id)
+          .update(song)
     ) flatMap { rowsAffected: Int =>
       if (rowsAffected == 1)
         get(song.id)
@@ -90,8 +93,8 @@ class SongDaoImpl(implicit databaseConnection: DatabaseConnection, executionCont
   override def delete(id: UUID): Future[Int] = {
     db.run(
       songs
-        .filterById(id)
-        .delete
+          .filterById(id)
+          .delete
     )
   }
 

@@ -1,6 +1,7 @@
-package co.adhoclabs.template.models
+package co.adhoclabs.template.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import co.adhoclabs.template.models._
 import java.util.UUID
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
