@@ -60,8 +60,8 @@ class AlbumDaoTest extends DataTestBase {
       }
     }
 
-    describe("creating an empty album") {
-      it("should correctly create with no songs") {
+    describe("create") {
+      it("should correctly create with no songs when given an empty album") {
         val expectedAlbumWithSongs = generateAlbumWithSongs(songCount = 0)
         albumIdsToCleanUp.putIfAbsent(expectedAlbumWithSongs.album.id, "")
 
@@ -83,6 +83,30 @@ class AlbumDaoTest extends DataTestBase {
           }
         }
       }
+
+      it("should throw a validation exception when the primary key already exists") {
+        val existingAlbumWithSongs = generateAlbumWithSongs()
+        albumIdsToCleanUp.putIfAbsent(existingAlbumWithSongs.album.id, "")
+
+        albumDao.create(existingAlbumWithSongs) flatMap { _ =>
+          recoverToSucceededIf[AlbumAlreadyExistsException] {
+            albumDao.create(existingAlbumWithSongs)
+          }
+        }
+      }
+
+      it("should throw a unique constraint violation exception when duplicate songs are added") {
+        val album = generateAlbum()
+        val songs = generateSongs(album.id, 3)
+        val albumWithDuplicateSongs = AlbumWithSongs(album, songs ++ songs)
+        albumIdsToCleanUp.putIfAbsent(albumWithDuplicateSongs.album.id, "")
+
+        recoverToExceptionIf[PSQLException] {
+          albumDao.create(albumWithDuplicateSongs)
+        } map { e =>
+          assert(DaoBase.isUniqueConstraintViolation(e))
+        }
+      }
     }
 
     describe("get") {
@@ -100,34 +124,6 @@ class AlbumDaoTest extends DataTestBase {
 
         albumDao.update(nonexistentAlbum) map { album: Option[Album] =>
           assert(album.isEmpty)
-        }
-      }
-    }
-
-    describe("create") {
-      it("should throw a validation exception when the primary key already exists") {
-        val existingAlbumWithSongs = generateAlbumWithSongs()
-        albumIdsToCleanUp.putIfAbsent(existingAlbumWithSongs.album.id, "")
-
-        albumDao.create(existingAlbumWithSongs) flatMap { _ =>
-          recoverToSucceededIf[AlbumAlreadyExistsException] {
-            albumDao.create(existingAlbumWithSongs)
-          }
-        }
-      }
-    }
-
-    describe("create") {
-      it("should throw a unique constraint violation exception when duplicate songs are added") {
-        val album = generateAlbum()
-        val songs = generateSongs(album.id, 3)
-        val albumWithDuplicateSongs = AlbumWithSongs(album, songs ++ songs)
-        albumIdsToCleanUp.putIfAbsent(albumWithDuplicateSongs.album.id, "")
-
-        recoverToExceptionIf[PSQLException] {
-          albumDao.create(albumWithDuplicateSongs)
-        } map { e =>
-          assert(DaoBase.isUniqueConstraintViolation(e))
         }
       }
     }

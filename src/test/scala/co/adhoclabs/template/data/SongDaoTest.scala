@@ -70,6 +70,16 @@ class SongDaoTest extends DataTestBase {
   }
 
   describe("createMany") {
+    it("should throw a validation exception when the primary key for one of the songs already exists") {
+      val existingSong = generateSong(existingAlbum.id, 1)
+      songDao.create(existingSong) flatMap { _ =>
+        val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ List(existingSong)
+        recoverToSucceededIf[SongAlreadyExistsException] {
+          songDao.createMany(expectedSongs)
+        }
+      }
+    }
+
     it("should create multiple songs") {
       val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ generateSongs(existingAlbum2.id, 3)
       songDao.createMany(expectedSongs) map { songs: List[Song] =>
@@ -109,18 +119,6 @@ class SongDaoTest extends DataTestBase {
     it("should return 0 if the song doesn't exist when we attempt to delete it") {
       songDao.delete(UUID.randomUUID) map { rowsAffected: Int =>
         assert(rowsAffected == 0)
-      }
-    }
-  }
-
-  describe("createMany") {
-    it("should throw a validation exception when the primary key for one of the songs already exists") {
-      val existingSong = generateSong(existingAlbum.id, 1)
-      songDao.create(existingSong) flatMap { _ =>
-        val expectedSongs: List[Song] = generateSongs(existingAlbum.id, 3) ++ List(existingSong)
-        recoverToSucceededIf[SongAlreadyExistsException] {
-          songDao.createMany(expectedSongs)
-        }
       }
     }
   }
