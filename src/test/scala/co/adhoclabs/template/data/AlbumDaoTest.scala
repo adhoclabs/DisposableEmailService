@@ -8,14 +8,16 @@ import co.adhoclabs.template.models.{Album, AlbumWithSongs}
 import org.postgresql.util.PSQLException
 import org.scalatest.FutureOutcome
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.jdk.CollectionConverters._
 
 class AlbumDaoTest extends DataTestBase {
   // Since all songs need an album and songs cascade delete,
-  // just need to delete any albums created to clean up the whole test
+  // just need to delete any albums created to clean up the whole test.
   val albumIdsToCleanUp = new java.util.concurrent.ConcurrentHashMap[UUID, String]()
+
+  // Note that this will be run for every test
   override def withFixture(test: NoArgAsyncTest): FutureOutcome = {
     complete {
       super.withFixture(test)
@@ -23,7 +25,7 @@ class AlbumDaoTest extends DataTestBase {
       val cleanupFutures = albumIdsToCleanUp.asScala.toList.map {
         case (albumId, _) => albumDao.delete(albumId)
       }
-      Await.result(Future.sequence(cleanupFutures), 5.second)
+      Await.result(Future.sequence(cleanupFutures), 2.second)
     }
   }
 

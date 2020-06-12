@@ -5,9 +5,11 @@
         </encoder>
     </appender>
 
-    <root level="OFF"> <!-- This ensures that application logging doesn't print out into unit tests -->
+    <!-- Affects slick logging -->
+    <root level="warn">
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="co.adhoclabs.template" level="info" />
+    <!-- Affects api logging -->
+    <logger name="co.adhoclabs.template" level="off" />
 </configuration>

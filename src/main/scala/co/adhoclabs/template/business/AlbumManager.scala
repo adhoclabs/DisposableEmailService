@@ -15,6 +15,7 @@ trait AlbumManager extends BusinessBase {
   def get(id: UUID): Future[Option[AlbumWithSongs]]
   def create(createAlbumRequest: CreateAlbumRequest): Future[AlbumWithSongs]
   def update(album: Album): Future[Option[Album]]
+  def delete(id: UUID): Future[Unit]
 }
 
 class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: ExecutionContext, analyticsManager: AnalyticsManager) extends AlbumManager {
@@ -39,4 +40,6 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, executionContext: Execution
   }
 
   override def update(album: Album): Future[Option[Album]] = albumDao.update(album)
+
+  override def delete(id: UUID): Future[Unit] = albumDao.delete(id).map(_ => ())
 }

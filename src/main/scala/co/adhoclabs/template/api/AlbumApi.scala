@@ -7,11 +7,19 @@ import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
 import java.util.UUID
 
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.ExecutionContext
+
 trait AlbumApi extends ApiBase {
+  val routes: Route
+}
 
-  implicit val albumManager: AlbumManager
+class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: ExecutionContext) extends AlbumApi {
 
-  val albumRoutes: Route = pathPrefix("albums") {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  override val routes: Route = pathPrefix("albums") {
     concat (
       pathEnd {
         post {
@@ -29,6 +37,9 @@ trait AlbumApi extends ApiBase {
               },
               put {
                 putAlbumRoute(id)
+              },
+              delete {
+                deleteAlbumRoute(id)
               }
             )
           }
@@ -59,5 +70,10 @@ trait AlbumApi extends ApiBase {
           albumManager.update(album)
         }
       }
+    }
+
+  def deleteAlbumRoute(id: UUID): Route =
+    complete {
+      albumManager.delete(id).map(_ => "Album deleted.")
     }
 }

@@ -34,7 +34,7 @@ class AlbumManagerTest extends BusinessTestBase {
 
       albumManager.get(expectedAlbumWithSongs.album.id) flatMap {
         case None => succeed
-        case Some(_: Song) => fail
+        case Some(_) => fail
       }
     }
   }
@@ -45,11 +45,7 @@ class AlbumManagerTest extends BusinessTestBase {
     val createAlbumRequest = CreateAlbumRequest(
       title = expectedAlbumWithSongs.album.title,
       genre = expectedAlbumWithSongs.album.genre,
-      songs = expectedAlbumWithSongs.songs.map(song => CreateSongRequest(
-        title = song.title,
-        albumId = song.albumId,
-        albumPosition = song.albumPosition
-      )),
+      songs = expectedAlbumWithSongs.songs.map(_.title),
     )
 
     it("should call AlbumDao.create and return an album when successful"){
@@ -68,7 +64,7 @@ class AlbumManagerTest extends BusinessTestBase {
 
     it("should call AlbumDao.create and throw an exception for an album with no songs") {
       recoverToSucceededIf[NoSongsInAlbumException] {
-        albumManager.create(createAlbumRequest.copy(songs = List.empty[CreateSongRequest]))
+        albumManager.create(createAlbumRequest.copy(songs = List.empty[String]))
       }
     }
 
@@ -105,6 +101,30 @@ class AlbumManagerTest extends BusinessTestBase {
       albumManager.update(expectedAlbum) map {
         case None => succeed
         case Some(_: Album) => fail
+      }
+    }
+  }
+
+  describe("delete") {
+    val expectedAlbumWithSongs = generateAlbumWithSongs()
+
+    it("should return Unit if the album was deleted") {
+      (albumDao.delete _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(1))
+
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
+        assert(u == ())
+      }
+    }
+
+    it("should return Unit if the album doesn't exist") {
+      (albumDao.delete _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(0))
+
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
+        assert(u == ())
       }
     }
   }

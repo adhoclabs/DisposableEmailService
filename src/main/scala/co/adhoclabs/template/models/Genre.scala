@@ -21,18 +21,29 @@ object Genre extends Enumeration with DefaultJsonProtocol {
 
     def read(jsValue: JsValue): Genre = {
 
-      def tryGetValue(id: Int) = try { Genre(id) } catch {
+      def tryGetValueFromInt(id: Int): Value = try { Genre(id) } catch {
         case e: Throwable => throw DeserializationException(s"No corresponding $enumClassName value exists for id $id.", e)
       }
 
+      def tryGetValueFromString(name: String): Value = values.find(_.toString == name) match {
+        case Some(genre: Genre) => genre
+        case None => throw DeserializationException(s"No corresponding $enumClassName value exists for name $name.")
+      }
+
+      def tryGetValueFromObject(jsValue: JsValue): Value =
+        jsValue.asJsObject.getFields("id") match {
+          case Seq(JsNumber(id)) => tryGetValueFromInt(id.toIntExact)
+          case _ => throw DeserializationException(s"Unable to parse value $jsValue supplied for $enumClassName")
+        }
+
+      // This implementation of `read` first attempts to read a plain numeric ID in the genre field,
+      // then tries to find the genre via its string name, and finally attempts to read a numeric id
+      // out of an object and find the genre using that.
+      // This might be more generous than you want to be with how you expect clients to send you enum values.
       jsValue match {
-        case JsNumber(id) => tryGetValue(id.toIntExact)
-        case _ =>
-          val jsObject = jsValue.asJsObject
-          jsObject.getFields("id") match {
-            case Seq(JsNumber(id)) => tryGetValue(id.toIntExact)
-            case _ => throw DeserializationException(s"Unable to parse value $jsValue supplied for $enumClassName")
-          }
+        case JsNumber(id) => tryGetValueFromInt(id.toIntExact)
+        case JsString(name) => tryGetValueFromString(name)
+        case _ => tryGetValueFromObject(jsValue)
       }
     }
   }
