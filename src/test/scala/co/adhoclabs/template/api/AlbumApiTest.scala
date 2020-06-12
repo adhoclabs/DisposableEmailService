@@ -5,9 +5,10 @@ import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, CreateSongRequest}
-import scala.concurrent.Future
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest}
 import spray.json._
+
+import scala.concurrent.Future
 
 class AlbumApiTest extends ApiTestBase {
 
@@ -16,12 +17,7 @@ class AlbumApiTest extends ApiTestBase {
   val createAlbumRequest = CreateAlbumRequest(
     title = expectedAlbumWithSongs.album.title,
     genre = expectedAlbumWithSongs.album.genre,
-    songs = expectedAlbumWithSongs.songs.map(song =>
-      CreateSongRequest(
-      title = song.title,
-      albumId = song.albumId,
-      albumPosition = song.albumPosition
-    ))
+    songs = expectedAlbumWithSongs.songs.map(_.title)
   )
 
   describe("GET /albums/:id") {
@@ -114,7 +110,7 @@ class AlbumApiTest extends ApiTestBase {
     }
 
     it("should return a 400 response when the album has no songs") {
-      val createAlbumRequestNoSongs = createAlbumRequest.copy(songs = List.empty[CreateSongRequest])
+      val createAlbumRequestNoSongs = createAlbumRequest.copy(songs = List.empty[String])
 
       (albumManager.create _)
           .expects(createAlbumRequestNoSongs)

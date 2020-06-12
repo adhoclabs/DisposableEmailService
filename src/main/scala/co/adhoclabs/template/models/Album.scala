@@ -23,7 +23,9 @@ object AlbumWithSongs {
     )
     AlbumWithSongs(
       album = album,
-      songs = createRequest.songs.map(Song.apply)
+      songs = createRequest.songs.zipWithIndex.map {
+        case (title, index) => Song(UUID.randomUUID, title = title, albumId = album.id, albumPosition = index + 1)
+      }
     )
   }
 }
@@ -31,5 +33,5 @@ object AlbumWithSongs {
 case class CreateAlbumRequest(
   title: String,
   genre: Genre,
-  songs: List[CreateSongRequest]
+  songs: List[String]
 )

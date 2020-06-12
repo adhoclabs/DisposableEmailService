@@ -1,17 +1,19 @@
 package co.adhoclabs.template
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import co.adhoclabs.analytics.AnalyticsManagerImpl
+import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
+import co.adhoclabs.sqs_client.SqsClientImpl
 import co.adhoclabs.sqs_client.queue.SqsQueue
-import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.template.api.{Api, ApiImpl}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
 import co.adhoclabs.template.exceptions.AnalyticsSqsClientFailedToInitializeException
 import com.typesafe.config.{Config, ConfigFactory}
-import java.io.File
+
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -39,7 +41,6 @@ object Main extends App {
 }
 
 object Dependencies {
-
   implicit val config: Config = Configuration.config
 
   implicit val actorSystem: ActorSystem = ActorSystem("template")
@@ -51,8 +52,7 @@ object Dependencies {
   implicit val songDao: SongDao = new SongDaoImpl
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
-  implicit val sqsClient: SqsClient = Analytics.sqsClient
-  implicit val analyticsManager = new AnalyticsManagerImpl
+  implicit val analyticsManager = Analytics.analyticsManager
 
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
@@ -88,7 +88,7 @@ object Analytics {
     config.getString("co.adhoclabs.amplitude-sdk.queue_name")
   )
 
-  implicit val sqsClient: SqsClientImpl = (awsAccessKeyO, awsSecretAccessKeyO, awsRegionO) match {
+  private implicit val sqsClient: SqsClientImpl = (awsAccessKeyO, awsSecretAccessKeyO, awsRegionO) match {
     case (Some(accessKey: String), Some(secretAccessKey: String), Some(region: String)) =>
       val queues: List[SqsQueue] = queueNames.map(queueName => SqsQueue(
         queueName = queueName,
@@ -99,5 +99,5 @@ object Analytics {
       new SqsClientImpl((queueNames zip queues).toMap)
     case _ => throw new AnalyticsSqsClientFailedToInitializeException
   }
-
+  val analyticsManager: AnalyticsManager = new AnalyticsManagerImpl
 }

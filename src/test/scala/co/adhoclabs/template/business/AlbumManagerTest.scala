@@ -45,11 +45,7 @@ class AlbumManagerTest extends BusinessTestBase {
     val createAlbumRequest = CreateAlbumRequest(
       title = expectedAlbumWithSongs.album.title,
       genre = expectedAlbumWithSongs.album.genre,
-      songs = expectedAlbumWithSongs.songs.map(song => CreateSongRequest(
-        title = song.title,
-        albumId = song.albumId,
-        albumPosition = song.albumPosition
-      )),
+      songs = expectedAlbumWithSongs.songs.map(_.title),
     )
 
     it("should call AlbumDao.create and return an album when successful"){
@@ -68,7 +64,7 @@ class AlbumManagerTest extends BusinessTestBase {
 
     it("should call AlbumDao.create and throw an exception for an album with no songs") {
       recoverToSucceededIf[NoSongsInAlbumException] {
-        albumManager.create(createAlbumRequest.copy(songs = List.empty[CreateSongRequest]))
+        albumManager.create(createAlbumRequest.copy(songs = List.empty[String]))
       }
     }
 
