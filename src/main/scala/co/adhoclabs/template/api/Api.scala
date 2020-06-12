@@ -11,9 +11,11 @@ import co.adhoclabs.template.business.{AlbumManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.concurrent.ExecutionContext
+
 trait Api extends ApiBase
 
-class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, actorSystem: ActorSystem) extends Api {
+class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, actorSystem: ActorSystem, executionContext: ExecutionContext) extends Api {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

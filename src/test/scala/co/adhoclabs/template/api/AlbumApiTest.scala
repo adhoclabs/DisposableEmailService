@@ -123,5 +123,17 @@ class AlbumApiTest extends ApiTestBase {
         assert(responseAs[ErrorResponse].error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs.")
       }
     }
+
+    describe("DELETE /albums/:id") {
+      it("should call AlbumManager.delete and return an empty 200") {
+        (albumManager.delete _)
+          .expects(expectedAlbumWithSongs.album.id)
+          .returning(Future.successful(()))
+
+        Delete(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
+          assert(status == StatusCodes.OK)
+        }
+      }
+    }
   }
 }

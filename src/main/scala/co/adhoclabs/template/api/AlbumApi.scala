@@ -6,13 +6,16 @@ import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
 import java.util.UUID
+
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.ExecutionContext
 
 trait AlbumApi extends ApiBase {
   val routes: Route
 }
 
-class AlbumApiImpl(implicit albumManager: AlbumManager) extends AlbumApi {
+class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: ExecutionContext) extends AlbumApi {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -34,6 +37,9 @@ class AlbumApiImpl(implicit albumManager: AlbumManager) extends AlbumApi {
               },
               put {
                 putAlbumRoute(id)
+              },
+              delete {
+                deleteAlbumRoute(id)
               }
             )
           }
@@ -64,5 +70,10 @@ class AlbumApiImpl(implicit albumManager: AlbumManager) extends AlbumApi {
           albumManager.update(album)
         }
       }
+    }
+
+  def deleteAlbumRoute(id: UUID): Route =
+    complete {
+      albumManager.delete(id).map(_ => "Album deleted.")
     }
 }

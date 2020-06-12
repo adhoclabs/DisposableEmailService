@@ -104,4 +104,28 @@ class AlbumManagerTest extends BusinessTestBase {
       }
     }
   }
+
+  describe("delete") {
+    val expectedAlbumWithSongs = generateAlbumWithSongs()
+
+    it("should return Unit if the album was deleted") {
+      (albumDao.delete _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(1))
+
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
+        assert(u == ())
+      }
+    }
+
+    it("should return Unit if the album doesn't exist") {
+      (albumDao.delete _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(0))
+
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
+        assert(u == ())
+      }
+    }
+  }
 }
