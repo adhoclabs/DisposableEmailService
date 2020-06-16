@@ -4,12 +4,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{ExceptionHandler, Rejection, Route, RouteResult}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.RouteResult.Rejected
-import akka.http.scaladsl.server.directives.LogEntry
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
+import akka.http.scaladsl.server.directives.LoggingMagnet
+import akka.util.ByteString
 import co.adhoclabs.template.business.{AlbumManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
+import scala.concurrent.duration._
 
 import scala.concurrent.ExecutionContext
 
@@ -24,39 +25,48 @@ class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, act
   val albumApi: AlbumApi = new AlbumApiImpl
 
   override val routes: Route = healthApi.routes ~
-      logRequestResult(requestAndResponseLoggingHandler _) {
+      logRequestResult(LoggingMagnet(_ =>requestAndResponseLoggingHandler)) {
         handleExceptions(exceptionHandler) {
           songApi.routes ~ albumApi.routes
         }
       }
 
-  private def logRequestResponse(request: HttpRequest, response: HttpResponse): Option[LogEntry] = {
-    logger.info(
-      s"${response.status} " +
-          s"${request.method.name} " +
-          s"${request.uri} " +
-          // we are logging request bodies here; if request bodies in your app contain sensitive information, consider changing this
-          s"${if (!request.entity.httpEntity.isKnownEmpty) "request body: " + Unmarshal(request.entity).to[String] else ""} " +
-          s"response body: ${Unmarshal(response.entity).to[String]}"
-    )
-    // This ensures that these logs are the same format as logs elsewhere in the service
-    None
+  import actorSystem._
+
+  private def logRequestResponse(request: HttpRequest, response: HttpResponse): Unit = {
+    val timeout = 10.millis
+    for {
+      requestBodyAsBytes: ByteString <- request.entity.toStrict(timeout).map(_.data)
+      responseBodyAsByes: ByteString <- response.entity.toStrict(timeout).map(_.data)
+    } yield {
+      val requestBodyString: String = requestBodyAsBytes.utf8String
+      val responseBodyString: String = responseBodyAsByes.utf8String
+
+      logger.info(
+        (s"${response.status} " +
+            s"${request.method.name} " +
+            s"${request.uri} " +
+            s"REQUEST BODY: $requestBodyString " +
+            s"RESPONSE BODY: $responseBodyString").replace("\n", "")
+      )
+    }
   }
 
-  private def logRequestRejection(request: HttpRequest, rejections: Seq[Rejection]): Option[LogEntry] = {
-    logger.error(
-      s"REJECTED: " +
-          s"${request.method.name} " +
-          s"${request.uri} " +
-          s"${if (!request.entity.httpEntity.isKnownEmpty) "request body: " + Unmarshal(request.entity).to[String] else ""} " +
-          s"rejections: ${rejections.mkString(", ")}"
-    )
-    // This ensures that these logs are the same format as logs elsewhere in the service
-    None
+  private def logRequestRejection(request: HttpRequest, rejections: Seq[Rejection]): Unit = {
+    val timeout = 10.millis
+    request.entity.toStrict(timeout).map(_.data) map { requestBodyAsBytes: ByteString =>
+      logger.info(
+        (s"REJECTED: " +
+            s"${request.method.name} " +
+            s"${request.uri} " +
+            s"REQUEST BODY: ${requestBodyAsBytes.utf8String} " +
+            s"REJECTIONS: [${rejections.mkString(", ")}]").replace("\n", "")
+      )
+    }
   }
 
-  protected def requestAndResponseLoggingHandler(request: HttpRequest): RouteResult => Option[LogEntry] = {
-    case RouteResult.Complete(response) => logRequestResponse(request, response)
+  protected def requestAndResponseLoggingHandler(request: HttpRequest): RouteResult => Unit = {
+    case Complete(response) => logRequestResponse(request, response)
     case Rejected(rejections) => logRequestRejection(request, rejections)
   }
 
