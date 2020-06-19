@@ -1,7 +1,5 @@
 package co.adhoclabs.template
 
-import java.io.File
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
@@ -13,7 +11,6 @@ import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
 import co.adhoclabs.template.exceptions.AnalyticsSqsClientFailedToInitializeException
 import com.typesafe.config.{Config, ConfigFactory}
-
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -32,7 +29,6 @@ object Main extends App {
     case Success(serverBinding) => {
       println("Starting Template with:")
       println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
-      println(s"- CONF: ${scala.util.Properties.envOrElse("CONF", "<EMPTY>")} (file exists: ${Configuration.configFileExists})")
 
       println(s"Listening to ${serverBinding.localAddress}")
     }
@@ -61,17 +57,7 @@ object Dependencies {
 }
 
 object Configuration {
-  private val configPath: String = scala.util.Properties.envOrElse("CONF", "")
-  private val configFile: File = new File(configPath)
-  val configFileExists: Boolean = configFile.exists
-  val config: Config = {
-    if(configFile.exists && configFile.isFile) {
-      val parseFile = ConfigFactory.parseFile(configFile)
-      ConfigFactory.load(parseFile)
-    } else {
-      ConfigFactory.load
-    }
-  }
+  val config: Config = ConfigFactory.load
 }
 
 object Analytics {
