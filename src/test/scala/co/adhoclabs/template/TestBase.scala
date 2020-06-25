@@ -1,6 +1,6 @@
 package co.adhoclabs.template
 
-import java.util.UUID
+import java.util.{Random, UUID}
 
 import co.adhoclabs.template.models.Genre._
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, Song}
@@ -9,6 +9,9 @@ import org.scalatest.OneInstancePerTest
 import org.scalatest.funspec.AsyncFunSpec
 
 abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInstancePerTest {
+  protected val random = new Random()
+  protected implicit val testClock = new TestClock()
+
   protected def generateAlbumWithSongs(songCount: Int = 3, genre: Genre = Classical): AlbumWithSongs = {
     val album = generateAlbum(genre)
     val songs = generateSongs(album.id, songCount)
@@ -19,7 +22,9 @@ abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInsta
     Album(
       id = UUID.randomUUID,
       title = "Album Title",
-      genre = genre
+      genre = genre,
+      createdAt = testClock.instant(),
+      updatedAt = testClock.instant()
     )
   }
 
@@ -33,7 +38,9 @@ abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInsta
       UUID.randomUUID,
       s"Song $albumPosition",
       albumId = albumId,
-      albumPosition = albumPosition
+      albumPosition = albumPosition,
+      createdAt = testClock.instant(),
+      updatedAt = testClock.instant()
     )
   }
 }

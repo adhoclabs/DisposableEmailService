@@ -1,5 +1,7 @@
 package co.adhoclabs.template
 
+import java.time.Clock
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
@@ -11,6 +13,7 @@ import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
 import co.adhoclabs.template.exceptions.AnalyticsSqsClientFailedToInitializeException
 import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -38,6 +41,7 @@ object Main extends App {
 
 object Dependencies {
   implicit val config: Config = Configuration.config
+  implicit val clock: Clock = Clock.systemUTC()
 
   implicit val actorSystem: ActorSystem = ActorSystem("template")
   implicit val executionContext: ExecutionContext = actorSystem.dispatcher
@@ -45,11 +49,13 @@ object Dependencies {
   private val dbConfigReference: String = "co.adhoclabs.template.dbConfig"
   implicit val db: Database = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)
 
+  implicit val schemaHistoryDao: SchemaHistoryDao = new SchemaHistoryDaoImpl
   implicit val songDao: SongDao = new SongDaoImpl
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
   implicit val analyticsManager = Analytics.analyticsManager
 
+  implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
 

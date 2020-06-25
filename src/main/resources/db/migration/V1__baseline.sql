@@ -1,5 +1,5 @@
 create type genre as enum(
-    'NoGenre'
+    'NoGenre',
     'Rock',
     'HipHop',
     'Classical',
@@ -9,12 +9,16 @@ create type genre as enum(
 create table if not exists albums (
     id uuid primary key,
     title text,
-    genre genre
+    genre genre,
+    created_at timestamp,
+    updated_at timestamp
 );
 
 create table if not exists songs (
     id uuid primary key,
     title text,
     album_id uuid references albums(id) on delete cascade,
-    album_position integer
+    album_position integer,
+    created_at timestamp,
+    updated_at timestamp
 );

@@ -7,8 +7,8 @@ import co.adhoclabs.template.models.Genre
 import com.github.tminglei.slickpg._
 import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, PostgresProfile, SetParameter}
 
-trait SlickPostgresProfile extends PostgresProfile with PgArraySupport with PgEnumSupport {
-  object PostgresAPI extends API with ArrayImplicits with UuidSupport {
+trait SlickPostgresProfile extends PostgresProfile with PgDate2Support with PgEnumSupport {
+  object PostgresAPI extends API with Date2DateTimePlainImplicits with UuidSupport {
 
     // custom mappers are required for enum types
     implicit val genreMapper = createEnumJdbcType("genre", Genre)

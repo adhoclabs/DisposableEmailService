@@ -1,6 +1,8 @@
 package co.adhoclabs.template.data
 
+import java.time.{Clock, Instant}
 import java.util.UUID
+
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
@@ -9,6 +11,7 @@ import org.postgresql.util.PSQLException
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.GetResult
 import slick.lifted.ProvenShape
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -25,13 +28,15 @@ case class SongsTable(tag: Tag) extends Table[Song](tag, "songs") {
   def title: Rep[String] = column[String]("title")
   def albumId: Rep[UUID] = column[UUID]("album_id")
   def albumPosition: Rep[Int] = column[Int]("album_position")
+  def createdAt: Rep[Instant] = column[Instant]("created_at")
+  def updatedAt: Rep[Instant] = column[Instant]("updated_at")
 
   // Provides a default projection that maps between columns in the table and instances of our case class.
   // mapTo creates a two-way mapping between the columns and fields.
-  override def * : ProvenShape[Song] = (id, title, albumId, albumPosition).mapTo[Song]
+  override def * : ProvenShape[Song] = (id, title, albumId, albumPosition, createdAt, updatedAt).mapTo[Song]
 }
 
-class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext) extends DaoBase with SongDao {
+class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext, clock: Clock) extends DaoBase with SongDao {
 
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -103,5 +108,9 @@ class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext) ext
       query.filter(_.id === id)
   }
 
-  implicit val getSongResult: GetResult[Song] = GetResult(r => Song(r.nextUuid, r.nextString, r.nextUuid, r.nextInt))
+  implicit val getSongResult: GetResult[Song] = {
+    GetResult { r =>
+      DaoBase.createSong(r.nextUuid, r)
+    }
+  }
 }

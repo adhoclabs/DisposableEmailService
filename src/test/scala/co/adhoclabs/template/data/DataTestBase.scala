@@ -10,6 +10,7 @@ abstract class DataTestBase extends TestBase {
   implicit protected val db: Database = DataTestBase.db
   implicit protected val daoExecutionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
 
+  protected val schemaHistoryDao: SchemaHistoryDao = new SchemaHistoryDaoImpl
   protected val albumDao: AlbumDao = new AlbumDaoImpl
   protected val songDao: SongDao = new SongDaoImpl
 }

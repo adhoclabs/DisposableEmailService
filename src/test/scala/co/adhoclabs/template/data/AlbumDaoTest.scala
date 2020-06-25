@@ -38,25 +38,30 @@ class AlbumDaoTest extends DataTestBase {
         albumDao.create(AlbumWithSongs(expectedAlbumWithSongs.album, expectedAlbumWithSongs.songs)) flatMap { createdAlbumWithSongs: AlbumWithSongs =>
           assert(createdAlbumWithSongs == expectedAlbumWithSongs)
 
-          albumDao.get(expectedAlbumWithSongs.album.id) flatMap {
-            case Some(gottenAlbumWithSongs) =>
-              assert(gottenAlbumWithSongs == expectedAlbumWithSongs)
+          albumDao.getWithSongs(expectedAlbumWithSongs.album.id) flatMap {
+            case Some(actualAlbumWithSongs) =>
+              assert(actualAlbumWithSongs == expectedAlbumWithSongs)
 
-              val expectedUpdatedAlbum = expectedAlbumWithSongs.album.copy(title = "updated title", genre = Rock)
-              albumDao.update(expectedUpdatedAlbum) flatMap {
-                case Some(updatedAlbum) =>
-                  assert(updatedAlbum == expectedUpdatedAlbum)
+              albumDao.get(expectedAlbumWithSongs.album.id) flatMap {
+                case Some(actualAlbum) =>
+                  assert(actualAlbum == expectedAlbumWithSongs.album)
 
-                  albumDao.delete(expectedAlbumWithSongs.album.id) flatMap { count =>
-                    assert(count == 1)
+                  val expectedUpdatedAlbum = expectedAlbumWithSongs.album.copy(title = "updated title", genre = Rock)
+                  albumDao.update(expectedUpdatedAlbum) flatMap {
+                    case Some(updatedAlbum) =>
+                      assert(updatedAlbum == expectedUpdatedAlbum)
 
-                    albumDao.get(expectedAlbumWithSongs.album.id) map { a =>
-                      assert(a.isEmpty)
-                    }
+                      albumDao.delete(expectedAlbumWithSongs.album.id) flatMap { count =>
+                        assert(count == 1)
+
+                        albumDao.getWithSongs(expectedAlbumWithSongs.album.id) map { a =>
+                          assert(a.isEmpty)
+                        }
+                      }
+                    case None => fail
                   }
                 case None => fail
               }
-            case None => fail
           }
         }
       }
@@ -70,14 +75,14 @@ class AlbumDaoTest extends DataTestBase {
         albumDao.create(AlbumWithSongs(expectedAlbumWithSongs.album, expectedAlbumWithSongs.songs)) flatMap { createdAlbumWithSongs: AlbumWithSongs =>
           assert(createdAlbumWithSongs == expectedAlbumWithSongs)
 
-          albumDao.get(expectedAlbumWithSongs.album.id) flatMap {
-            case Some(gottenAlbumWithSongs) =>
-              assert(gottenAlbumWithSongs == expectedAlbumWithSongs)
+          albumDao.getWithSongs(expectedAlbumWithSongs.album.id) flatMap {
+            case Some(actualAlbumWithSongs) =>
+              assert(actualAlbumWithSongs == expectedAlbumWithSongs)
 
               albumDao.delete(expectedAlbumWithSongs.album.id) flatMap { count =>
                 assert(count == 1)
 
-                albumDao.get(expectedAlbumWithSongs.album.id) map { a =>
+                albumDao.getWithSongs(expectedAlbumWithSongs.album.id) map { a =>
                   assert(a.isEmpty)
                 }
               }
@@ -113,7 +118,15 @@ class AlbumDaoTest extends DataTestBase {
 
     describe("get") {
       it("should return None for an album that doesn't exist") {
-        albumDao.get(UUID.randomUUID) map { albumWithSongsO: Option[AlbumWithSongs] =>
+        albumDao.get(UUID.randomUUID) map { albumO: Option[Album] =>
+          assert(albumO.isEmpty)
+        }
+      }
+    }
+
+    describe("getWithSongs") {
+      it("should return None for an album that doesn't exist") {
+        albumDao.getWithSongs(UUID.randomUUID) map { albumWithSongsO: Option[AlbumWithSongs] =>
           assert(albumWithSongsO.isEmpty)
         }
       }

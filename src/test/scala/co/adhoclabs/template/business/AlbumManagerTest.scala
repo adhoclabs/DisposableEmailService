@@ -3,36 +3,36 @@ package co.adhoclabs.template.business
 import co.adhoclabs.analytics.AnalyticsManager
 import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
-import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException}
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, InvalidPatchException, NoSongsInAlbumException}
 import co.adhoclabs.template.models._
+
 import scala.concurrent.Future
 
 class AlbumManagerTest extends BusinessTestBase {
   implicit val albumDao: AlbumDao = mock[AlbumDao]
   implicit val analyticsManager: AnalyticsManager = mock[AnalyticsManager]
-
   val albumManager: AlbumManager = new AlbumManagerImpl
 
-  describe("get") {
-    val expectedAlbumWithSongs = generateAlbumWithSongs()
+  val expectedAlbumWithSongs = generateAlbumWithSongs()
 
+  describe("get") {
     it("should return a album with the supplied id") {
-      (albumDao.get _)
+      (albumDao.getWithSongs _)
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
-      albumManager.get(expectedAlbumWithSongs.album.id) map {
+      albumManager.getWithSongs(expectedAlbumWithSongs.album.id) map {
         case Some(albumWithSongs) => assert(albumWithSongs == expectedAlbumWithSongs)
         case None => fail
       }
     }
 
     it("should return None when the album doesn't exist") {
-      (albumDao.get _)
+      (albumDao.getWithSongs _)
           .expects(expectedAlbumWithSongs.album.id)
           .returning(Future.successful(None))
 
-      albumManager.get(expectedAlbumWithSongs.album.id) flatMap {
+      albumManager.getWithSongs(expectedAlbumWithSongs.album.id) flatMap {
         case None => succeed
         case Some(_) => fail
       }
@@ -40,8 +40,6 @@ class AlbumManagerTest extends BusinessTestBase {
   }
 
   describe("create") {
-    val expectedAlbumWithSongs = generateAlbumWithSongs()
-
     val createAlbumRequest = CreateAlbumRequest(
       title = expectedAlbumWithSongs.album.title,
       genre = expectedAlbumWithSongs.album.genre,
@@ -79,28 +77,46 @@ class AlbumManagerTest extends BusinessTestBase {
     }
   }
   
-  describe("update") {
-    val expectedAlbum = generateAlbum()
+  describe("patch") {
+    val expectedUpdatedAlbum = expectedAlbumWithSongs.album.copy(
+      title = "Updated Title",
+      genre = Genre.HipHop
+    )
+    val patchRequest = PatchAlbumRequest(
+      title = Some(expectedUpdatedAlbum.title),
+      genre = Some(expectedUpdatedAlbum.genre)
+    )
 
     it("should call AlbumDao.update and return updated album if it already exists") {
+      (albumDao.get _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
       (albumDao.update _)
-          .expects(expectedAlbum)
-          .returning(Future.successful(Some(expectedAlbum)))
+          .expects(expectedUpdatedAlbum)
+          .returning(Future.successful(Some(expectedUpdatedAlbum)))
 
-      albumManager.update(expectedAlbum) map {
-        case Some(updatedAlbum: Album) => assert(updatedAlbum == expectedAlbum)
+      albumManager.patch(expectedAlbumWithSongs.album.id, patchRequest) map {
+        case Some(updatedAlbum: Album) => assert(updatedAlbum == expectedUpdatedAlbum)
         case None => fail
       }
     }
 
     it("should call albumDao.update and return None if the album doesn't exist") {
-      (albumDao.update _)
-          .expects(*)
-          .returning(Future.successful(None))
+      (albumDao.get _)
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(None))
 
-      albumManager.update(expectedAlbum) map {
+      albumManager.patch(expectedAlbumWithSongs.album.id, patchRequest) map {
         case None => succeed
         case Some(_: Album) => fail
+      }
+    }
+
+    it("should throw InvalidPatchException if patch is empty") {
+      val emptyPatchRequest = PatchAlbumRequest()
+
+      recoverToSucceededIf[InvalidPatchException] {
+        albumManager.patch(expectedAlbumWithSongs.album.id, emptyPatchRequest)
       }
     }
   }
