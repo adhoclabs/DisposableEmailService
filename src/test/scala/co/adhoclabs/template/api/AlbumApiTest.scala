@@ -16,6 +16,7 @@ class AlbumApiTest extends ApiTestBase {
 
   val createAlbumRequest = CreateAlbumRequest(
     title = expectedAlbumWithSongs.album.title,
+    artists = expectedAlbumWithSongs.album.artists,
     genre = expectedAlbumWithSongs.album.genre,
     songs = expectedAlbumWithSongs.songs.map(_.title)
   )
@@ -46,6 +47,7 @@ class AlbumApiTest extends ApiTestBase {
   describe("PATCH /albums/:id") {
     val patchRequest = PatchAlbumRequest(
       title = Some(expectedAlbumWithSongs.album.title),
+      artists = Some(expectedAlbumWithSongs.album.artists),
       genre = Some(expectedAlbumWithSongs.album.genre)
     )
 

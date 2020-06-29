@@ -15,8 +15,8 @@ class AlbumManagerTest extends BusinessTestBase {
 
   val expectedAlbumWithSongs = generateAlbumWithSongs()
 
-  describe("get") {
-    it("should return a album with the supplied id") {
+  describe("getWithSongs") {
+    it("should return an album with the supplied id") {
       (albumDao.getWithSongs _)
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
@@ -42,6 +42,7 @@ class AlbumManagerTest extends BusinessTestBase {
   describe("create") {
     val createAlbumRequest = CreateAlbumRequest(
       title = expectedAlbumWithSongs.album.title,
+      artists = expectedAlbumWithSongs.album.artists,
       genre = expectedAlbumWithSongs.album.genre,
       songs = expectedAlbumWithSongs.songs.map(_.title),
     )

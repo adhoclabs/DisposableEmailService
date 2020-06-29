@@ -9,6 +9,7 @@ create type genre as enum(
 create table if not exists albums (
     id uuid primary key,
     title text,
+    artists text[],
     genre genre,
     created_at timestamp,
     updated_at timestamp

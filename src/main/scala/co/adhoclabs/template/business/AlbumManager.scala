@@ -38,6 +38,7 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
     val album = Album(
       id = UUID.randomUUID,
       title = createAlbumRequest.title,
+      artists = createAlbumRequest.artists,
       genre = createAlbumRequest.genre,
       createdAt = now,
       updatedAt = now
@@ -85,6 +86,7 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
       album
         .patchTitle(patchRequest.title)
         .patchGenre(patchRequest.genre)
+        .patchArtists(patchRequest.artists)
     }
 
     def patchTitle(titleO: Option[String]): Album = {
@@ -97,6 +99,13 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
     def patchGenre(genreO: Option[Genre]): Album = {
       genreO match {
         case Some(genre) => album.copy(genre = genre)
+        case None => album
+      }
+    }
+
+    def patchArtists(artistsO: Option[List[String]]): Album = {
+      artistsO match {
+        case Some(artists) => album.copy(artists = artists)
         case None => album
       }
     }

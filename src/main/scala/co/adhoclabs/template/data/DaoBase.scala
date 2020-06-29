@@ -19,17 +19,18 @@ object DaoBase {
     e.getSQLState == "23505"
   }
 
-  def createAlbum(r: PositionedResult): Album = {
+  def constructAlbum(r: PositionedResult): Album = {
     Album(
       id = r.nextUuid,
       title = r.nextString,
+      artists = r.nextArray[String].toList,
       genre = Genre.withName(r.nextString),
       createdAt = r.nextInstant,
       updatedAt = r.nextInstant
     )
   }
 
-  def createSong(uuid: UUID, r: PositionedResult): Song = {
+  def constructSong(uuid: UUID, r: PositionedResult): Song = {
     Song(
       id = uuid,
       title = r.nextString,

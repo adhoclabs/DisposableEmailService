@@ -1,21 +1,20 @@
 package co.adhoclabs.template.data
 
 import java.time.{Clock, Instant}
+import java.util.UUID
 
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
 import co.adhoclabs.template.models.Genre._
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, Genre, Song}
-import java.util.UUID
-
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, Song}
 import org.postgresql.util.PSQLException
 import org.slf4j.{Logger, LoggerFactory}
+import slick.jdbc.GetResult
+import slick.lifted.ProvenShape
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import slick.jdbc.{GetResult, PositionedResult}
-import slick.lifted.ProvenShape
 
 trait AlbumDao {
   def get(id: UUID): Future[Option[Album]]
@@ -28,13 +27,14 @@ trait AlbumDao {
 case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
   def id: Rep[UUID] = column[UUID]("id", O.PrimaryKey)
   def title: Rep[String] = column[String]("title")
+  def artists: Rep[List[String]] = column[List[String]]("artists")
   def genre: Rep[Genre] = column[Genre]("genre")
   def createdAt: Rep[Instant] = column[Instant]("created_at")
   def updatedAt: Rep[Instant] = column[Instant]("updated_at")
 
   // Provides a default projection that maps between columns in the table and instances of our case class.
   // mapTo creates a two-way mapping between the columns and fields.
-  override def * : ProvenShape[Album] = (id, title, genre, createdAt, updatedAt).mapTo[Album]
+  override def * : ProvenShape[Album] = (id, title, artists, genre, createdAt, updatedAt).mapTo[Album]
 }
 
 class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, clock: Clock) extends DaoBase with AlbumDao {
@@ -60,7 +60,19 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
     // You can also do joins in slick, but if the compiled query ends up being unnecessarily complex, this is preferred
     val queryAction =
       sql"""
-        select a.id, a.title, a.genre, a.created_at, a.updated_at, s.id, s.title, s.album_id, s.album_position, s.created_at, s.updated_at
+        select
+          a.id,
+          a.title,
+          a.artists,
+          a.genre,
+          a.created_at,
+          a.updated_at,
+          s.id,
+          s.title,
+          s.album_id,
+          s.album_position,
+          s.created_at,
+          s.updated_at
         from albums a
         left join songs s on s.album_id = a.id
         where a.id = $id
@@ -121,10 +133,11 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
         update albums
         set
           title = ${album.title},
+          artists = ${album.artists},
           genre = ${album.genre.toString}::genre,
           updated_at = ${clock.instant()}
         where id = ${album.id}
-        returning id, title, genre, created_at, updated_at
+        returning id, title, artists, genre, created_at, updated_at
          """.as[Album]
     db.run(
       query
@@ -154,15 +167,15 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
   // each field can also be written as `r.<<` for brevity, which will call the correct `.nextX` method -- here we used the
   // type-specific methods for compilation-time type safety.
   implicit val getAlbumResult: GetResult[Album] = {
-    GetResult { r => DaoBase.createAlbum(r) }
+    GetResult { r => DaoBase.constructAlbum(r) }
   }
 
   implicit val getAlbumSongTupleResult: GetResult[(Album, Option[Song])] = {
     GetResult { r =>
       (
-        DaoBase.createAlbum(r),
+        DaoBase.constructAlbum(r),
         r.nextUuidOption match {
-          case Some(uuid) => Some(DaoBase.createSong(uuid, r))
+          case Some(uuid) => Some(DaoBase.constructSong(uuid, r))
           case None => None
         }
       )

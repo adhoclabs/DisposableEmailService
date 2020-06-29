@@ -62,6 +62,7 @@ class AlbumDaoTest extends DataTestBase {
                   }
                 case None => fail
               }
+            case None => fail
           }
         }
       }

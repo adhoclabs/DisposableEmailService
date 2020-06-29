@@ -22,6 +22,7 @@ abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInsta
     Album(
       id = UUID.randomUUID,
       title = "Album Title",
+      artists = List("Artist 1", "Artist 2"),
       genre = genre,
       createdAt = testClock.instant(),
       updatedAt = testClock.instant()

@@ -110,7 +110,7 @@ class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext, clo
 
   implicit val getSongResult: GetResult[Song] = {
     GetResult { r =>
-      DaoBase.createSong(r.nextUuid, r)
+      DaoBase.constructSong(r.nextUuid, r)
     }
   }
 }
