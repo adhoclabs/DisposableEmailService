@@ -1,12 +1,12 @@
 package co.adhoclabs.template.api
 
+import java.util.UUID
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.AlbumManager
-import co.adhoclabs.template.models.{Album, CreateAlbumRequest}
-import java.util.UUID
-
+import co.adhoclabs.template.models.{CreateAlbumRequest, PatchAlbumRequest}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
@@ -35,8 +35,8 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
               get {
                 getAlbumRoute(id)
               },
-              put {
-                putAlbumRoute(id)
+              patch {
+                patchAlbumRoute(id)
               },
               delete {
                 deleteAlbumRoute(id)
@@ -51,7 +51,7 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
   def getAlbumRoute(id: UUID): Route =
     rejectEmptyResponse {
       complete {
-        albumManager.get(id)
+        albumManager.getWithSongs(id)
       }
     }
 
@@ -63,11 +63,11 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
       }
     }
 
-  def putAlbumRoute(id: UUID): Route =
-    entity(as[Album]) { album: Album =>
+  def patchAlbumRoute(id: UUID): Route =
+    entity(as[PatchAlbumRequest]) { patchRequest: PatchAlbumRequest =>
       rejectEmptyResponse {
         complete {
-          albumManager.update(album)
+          albumManager.patch(id, patchRequest)
         }
       }
     }

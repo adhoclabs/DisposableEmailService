@@ -6,21 +6,12 @@ import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
-import java.util.UUID
-import scala.concurrent.Future
 import spray.json._
 
+import scala.concurrent.Future
+
 class SongApiTest extends ApiTestBase {
-
-  val albumId = UUID.randomUUID
-  val songId = UUID.randomUUID
-
-  val expectedSong: Song = Song(
-    id = songId,
-    title = "Once in a Lifetime",
-    albumId = albumId,
-    albumPosition = 1
-  )
+  val expectedSong: Song = generateSong(generateAlbum().id, 1)
 
   val createSongRequest: CreateSongRequest = CreateSongRequest(
     title = expectedSong.title,
@@ -98,5 +89,4 @@ class SongApiTest extends ApiTestBase {
       }
     }
   }
-
 }

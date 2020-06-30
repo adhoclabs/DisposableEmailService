@@ -2,21 +2,21 @@ package co.adhoclabs.template.api
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{ExceptionHandler, Rejection, Route, RouteResult}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.directives.LoggingMagnet
+import akka.http.scaladsl.server.{ExceptionHandler, Rejection, Route, RouteResult}
 import akka.util.ByteString
-import co.adhoclabs.template.business.{AlbumManager, SongManager}
+import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
-import scala.concurrent.duration._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 trait Api extends ApiBase
 
-class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, actorSystem: ActorSystem, executionContext: ExecutionContext) extends Api {
+class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, healthManager: HealthManager, actorSystem: ActorSystem, executionContext: ExecutionContext) extends Api {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -30,8 +30,6 @@ class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, act
           songApi.routes ~ albumApi.routes
         }
       }
-
-  import actorSystem._
 
   private def logRequestResponse(request: HttpRequest, response: HttpResponse): Unit = {
     val timeout = 10.millis
