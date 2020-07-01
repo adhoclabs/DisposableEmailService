@@ -167,7 +167,7 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
   // each field can also be written as `r.<<` for brevity, which will call the correct `.nextX` method -- here we used the
   // type-specific methods for compilation-time type safety.
   implicit val getAlbumResult: GetResult[Album] = {
-    GetResult { r => DaoBase.constructAlbum(r) }
+    GetResult(DaoBase.constructAlbum)
   }
 
   implicit val getAlbumSongTupleResult: GetResult[(Album, Option[Song])] = {
