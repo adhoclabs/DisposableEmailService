@@ -25,7 +25,6 @@ class SchemaHistoryDaoImpl(implicit db: Database) extends DaoBase with SchemaHis
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   lazy val schemaHistories = TableQuery[SchemaHistoryTable]
-  private type SongsQuery = Query[SongsTable, SchemaHistory, Seq]
 
   override def getLatest(): Future[SchemaHistory] = {
     db.run(

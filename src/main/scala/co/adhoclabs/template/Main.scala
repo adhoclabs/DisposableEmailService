@@ -40,25 +40,28 @@ object Main extends App {
 }
 
 object Dependencies {
+  // config
   implicit val config: Config = Configuration.config
   implicit val clock: Clock = Clock.systemUTC()
 
+  // akka/concurrency
   implicit val actorSystem: ActorSystem = ActorSystem("template")
   implicit val executionContext: ExecutionContext = actorSystem.dispatcher
 
+  // database
   private val dbConfigReference: String = "co.adhoclabs.template.dbConfig"
   implicit val db: Database = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)
-
   implicit val schemaHistoryDao: SchemaHistoryDao = new SchemaHistoryDaoImpl
   implicit val songDao: SongDao = new SongDaoImpl
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
+  // business
   implicit val analyticsManager = Analytics.analyticsManager
-
   implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
 
+  // api
   val api: Api = new ApiImpl
 }
 
