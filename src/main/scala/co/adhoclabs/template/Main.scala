@@ -29,13 +29,12 @@ object Main extends App {
 
   val bindingFuture = Http().bindAndHandle(Dependencies.api.routes, host, port)
   bindingFuture.onComplete {
-    case Success(serverBinding) => {
+    case Success(serverBinding) =>
       println("Starting Template with:")
       println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
-
       println(s"Listening to ${serverBinding.localAddress}")
-    }
-    case Failure(error) => println(s"error: ${error.getMessage}")
+    case Failure(error) =>
+      println(s"error: ${error.getMessage}")
   }
 }
 
@@ -56,7 +55,7 @@ object Dependencies {
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
   // business
-  implicit val analyticsManager = Analytics.analyticsManager
+  implicit val analyticsManager: AnalyticsManager = Analytics.analyticsManager
   implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
@@ -70,7 +69,7 @@ object Configuration {
 }
 
 object Analytics {
-  val config = Configuration.config
+  val config: Config = Configuration.config
 
   // These need to be made available separately via environment variable config
   private val awsAccessKeyO: Option[String] = sys.env.get("AWS_ACCESS_KEY_ID")
