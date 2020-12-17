@@ -130,8 +130,8 @@ class AlbumManagerTest extends BusinessTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(1))
 
-      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
-        assert(u == ())
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { _ =>
+        succeed
       }
     }
 
@@ -140,8 +140,8 @@ class AlbumManagerTest extends BusinessTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(0))
 
-      albumManager.delete(expectedAlbumWithSongs.album.id) map { u =>
-        assert(u == ())
+      albumManager.delete(expectedAlbumWithSongs.album.id) map { _ =>
+        succeed
       }
     }
   }

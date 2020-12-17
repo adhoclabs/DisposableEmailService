@@ -1,10 +1,10 @@
 package co.adhoclabs.template
 
 import java.time.Clock
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
+import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.SqsClientImpl
 import co.adhoclabs.sqs_client.queue.SqsQueue
 import co.adhoclabs.template.api.{Api, ApiImpl}
@@ -27,7 +27,7 @@ object Main extends App {
   val host = config.getString("co.adhoclabs.template.host")
   val port = config.getInt("co.adhoclabs.template.port")
 
-  val bindingFuture = Http().bindAndHandle(Dependencies.api.routes, host, port)
+  val bindingFuture = Http.get(system).newServerAt(interface = host, port = port).bind(Dependencies.api.routes)
   bindingFuture.onComplete {
     case Success(serverBinding) =>
       println("Starting Template with:")
@@ -46,6 +46,11 @@ object Dependencies {
   // akka/concurrency
   implicit val actorSystem: ActorSystem = ActorSystem("template")
   implicit val executionContext: ExecutionContext = actorSystem.dispatcher
+
+  // secrets
+  private val secretsRegion: String = Configuration.config.getString("co.adhoclabs.template.secrets.region")
+  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(secretsRegion)
+  implicit val secretsManager: SecretsManager = new SecretsManagerImpl()
 
   // database
   private val dbConfigReference: String = "co.adhoclabs.template.dbConfig"
