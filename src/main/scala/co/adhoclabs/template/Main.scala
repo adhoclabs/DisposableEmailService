@@ -1,10 +1,10 @@
 package co.adhoclabs.template
 
 import java.time.Clock
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
+import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.SqsClientImpl
 import co.adhoclabs.sqs_client.queue.SqsQueue
 import co.adhoclabs.template.api.{Api, ApiImpl}
@@ -27,15 +27,14 @@ object Main extends App {
   val host = config.getString("co.adhoclabs.template.host")
   val port = config.getInt("co.adhoclabs.template.port")
 
-  val bindingFuture = Http().bindAndHandle(Dependencies.api.routes, host, port)
+  val bindingFuture = Http.get(system).newServerAt(interface = host, port = port).bind(Dependencies.api.routes)
   bindingFuture.onComplete {
-    case Success(serverBinding) => {
+    case Success(serverBinding) =>
       println("Starting Template with:")
       println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
-
       println(s"Listening to ${serverBinding.localAddress}")
-    }
-    case Failure(error) => println(s"error: ${error.getMessage}")
+    case Failure(error) =>
+      println(s"error: ${error.getMessage}")
   }
 }
 
@@ -48,6 +47,11 @@ object Dependencies {
   implicit val actorSystem: ActorSystem = ActorSystem("template")
   implicit val executionContext: ExecutionContext = actorSystem.dispatcher
 
+  // secrets
+  private val secretsRegion: String = Configuration.config.getString("co.adhoclabs.template.secrets.region")
+  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(secretsRegion)
+  implicit val secretsManager: SecretsManager = new SecretsManagerImpl()
+
   // database
   private val dbConfigReference: String = "co.adhoclabs.template.dbConfig"
   implicit val db: Database = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)
@@ -56,7 +60,7 @@ object Dependencies {
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
   // business
-  implicit val analyticsManager = Analytics.analyticsManager
+  implicit val analyticsManager: AnalyticsManager = Analytics.analyticsManager
   implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
@@ -70,7 +74,7 @@ object Configuration {
 }
 
 object Analytics {
-  val config = Configuration.config
+  val config: Config = Configuration.config
 
   // These need to be made available separately via environment variable config
   private val awsAccessKeyO: Option[String] = sys.env.get("AWS_ACCESS_KEY_ID")

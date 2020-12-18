@@ -1,0 +1,11 @@
+[repositories]
+local
+ivy-proxy-releases: https://nexusrepo.burnerapp.com/content/groups/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+maven-proxy-releases: https://nexusrepo.burnerapp.com/content/groups/public/
+maven-private-snapshots: https://nexusrepo.burnerapp.com/content/repositories/snapshots/
+maven-private-releases:  https://nexusrepo.burnerapp.com/content/repositories/releases/
+sonatype-proxy-releases: https://nexusrepo.burnerapp.com/repositories/sonatype_public/, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext]
+center: https://jcenter.bintray.com/
+maven-central-proxy: https://nexusrepo.burnerapp.com/content/repositories/central/
+typesafe-ivy-releases: https://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
+sbt-ivy-snapshots: https://repo.scala-sbt.org/scalasbt/ivy-snapshots/, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
