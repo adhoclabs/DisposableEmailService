@@ -44,3 +44,12 @@ parallelExecution in Test := false
 
 // Use ScalaTest's log buffering to see test logs in the correct order
 logBuffered in Test := false
+
+// If running `sbt assembly` results in an error message containing:
+//   java.lang.RuntimeException: deduplicate: different file contents found in the following:
+// then implement a merge strategy like the one below (See https://github.com/sbt/sbt-assembly#merge-strategy for information):
+//assemblyMergeStrategy in assembly := {
+//  case PathList("reference.conf") => MergeStrategy.concat
+//  case PathList("META-INF", _*) => MergeStrategy.discard
+//  case _ => MergeStrategy.first
+//}
