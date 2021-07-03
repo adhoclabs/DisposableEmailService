@@ -5,7 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import co.adhoclabs.template.TestBase
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 
-abstract class ApiTestBase extends TestBase with ScalatestRouteTest with JsonSupport {
+abstract class ApiTestBase extends TestBase with ScalatestRouteTest {
 
   implicit val healthManager: HealthManager = mock[HealthManager]
   implicit val songManager: SongManager = mock[SongManager]

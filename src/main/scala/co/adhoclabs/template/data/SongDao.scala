@@ -1,8 +1,5 @@
 package co.adhoclabs.template.data
 
-import java.time.{Clock, Instant}
-import java.util.UUID
-
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
@@ -12,6 +9,8 @@ import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.GetResult
 import slick.lifted.ProvenShape
 
+import java.time.{Clock, Instant}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -32,8 +31,7 @@ case class SongsTable(tag: Tag) extends Table[Song](tag, "songs") {
   def updatedAt: Rep[Instant] = column[Instant]("updated_at")
 
   // Provides a default projection that maps between columns in the table and instances of our case class.
-  // mapTo creates a two-way mapping between the columns and fields.
-  override def * : ProvenShape[Song] = (id, title, albumId, albumPosition, createdAt, updatedAt).mapTo[Song]
+  override def * : ProvenShape[Song] = (id, title, albumId, albumPosition, createdAt, updatedAt) <> ((Song.apply _).tupled, Song.unapply)
 }
 
 class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext, clock: Clock) extends DaoBase with SongDao {
