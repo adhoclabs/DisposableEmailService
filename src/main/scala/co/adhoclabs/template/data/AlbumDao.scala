@@ -1,18 +1,17 @@
 package co.adhoclabs.template.data
 
-import java.time.{Clock, Instant}
-import java.util.UUID
-
 import co.adhoclabs.template.data.SlickPostgresProfile.api._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException}
-import co.adhoclabs.template.models.Genre._
+import co.adhoclabs.template.models.Genre.Genre
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, Song}
 import org.postgresql.util.PSQLException
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.GetResult
 import slick.lifted.ProvenShape
 
+import java.time.{Clock, Instant}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -33,8 +32,7 @@ case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
   def updatedAt: Rep[Instant] = column[Instant]("updated_at")
 
   // Provides a default projection that maps between columns in the table and instances of our case class.
-  // mapTo creates a two-way mapping between the columns and fields.
-  override def * : ProvenShape[Album] = (id, title, artists, genre, createdAt, updatedAt).mapTo[Album]
+  override def * : ProvenShape[Album] = (id, title, artists, genre, createdAt, updatedAt) <> ((Album.apply _).tupled, Album.unapply)
 }
 
 class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, clock: Clock) extends DaoBase with AlbumDao {

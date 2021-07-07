@@ -1,5 +1,8 @@
 package co.adhoclabs.template.models
 
+import co.adhoclabs.model.BaseJsonProtocol
+import spray.json.RootJsonFormat
+
 import java.time.Instant
 import java.util.UUID
 
@@ -11,6 +14,10 @@ case class Song(
   createdAt: Instant,
   updatedAt: Instant
 )
+
+object Song extends BaseJsonProtocol {
+  implicit val jsonFormat: RootJsonFormat[Song] = jsonFormat6(Song.apply)
+}
 
 /*
 // While we ultimately felt that the apply method didn't add enough value, especially
@@ -37,3 +44,7 @@ case class CreateSongRequest(
   albumId: UUID,
   albumPosition: Int
 )
+
+object CreateSongRequest extends BaseJsonProtocol {
+  implicit val jsonFormat: RootJsonFormat[CreateSongRequest] = jsonFormat3(CreateSongRequest.apply)
+}

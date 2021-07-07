@@ -24,8 +24,8 @@ libraryDependencies ++= Seq(
   "org.flywaydb"        %  "flyway-core"          % "6.3.0",
 
   // Our dependencies
-  "co.adhoclabs" %% "analytics" % "1.0.7",
-  "co.adhoclabs" %% "model"     % "1.13.10",
+  "co.adhoclabs" %% "analytics" % "1.0.8",
+  "co.adhoclabs" %% "model"     % "2.2.0",
   "co.adhoclabs" %% "secrets"   % "1.0.0",
 
   // Test dependencies

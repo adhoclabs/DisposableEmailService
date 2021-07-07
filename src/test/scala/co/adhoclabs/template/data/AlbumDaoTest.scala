@@ -1,13 +1,12 @@
 package co.adhoclabs.template.data
 
-import java.util.UUID
-
 import co.adhoclabs.template.exceptions.AlbumAlreadyExistsException
 import co.adhoclabs.template.models.Genre._
 import co.adhoclabs.template.models.{Album, AlbumWithSongs}
 import org.postgresql.util.PSQLException
 import org.scalatest.FutureOutcome
 
+import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters._
