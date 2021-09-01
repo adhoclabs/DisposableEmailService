@@ -25,3 +25,21 @@ If your service has an RDS instance that we will need to add monitoring to in Pr
 3. edit the service name, rds instance name, and threshold values at the top of the script.
 4. WARN THE `#prod-alerts` Slack channel that they will see a bunch of incoming alerts for the new service
 5. run the script. (Note - if you mess anything up, re-running the script will properly update the alarms as long as you keep the service name the same)
+
+#### Setting up pganalyze
+1. From the main pganalyze site, click the server dropdown, then click "+ Add Server"
+2. Follow steps 1 and 2 to:
+    1. enable the extension
+    2. create a user (save the password for a later step!)
+    3. create a schema
+    4. create or replace a function
+3. Skip the Step 3 screen (adding IAM policy)
+4. On the Step 4 screen, choose docker container
+    1. You will want to pull the container image locally in order to test the connection with pganalyze
+5. On the Step 5 screen
+    1. In the Kubernetes repo/manifests/prod.burner.cc/pganalyze folder, copy an existing pganalyze file (ex, collector-telephony-prod.yml) and rename things to match your new service
+    2. Copy the relevant details into the `env` file described on the pganalyze instructions - we will use this to run the container locally and verify everything works
+    3. Run the test command
+        1. If you get an error like 'no route to host' on the 'Testing statisctics collection...' or 'Testing activity snapshots...', check the postgres web site - it may have correctly worked anyways.
+    4. Apply the yaml to the cluster.
+6. Log Insights - these should be included as long as you use the RDS name as the host, or you set the AWS_INSTANCE_ID environment variable on the collector
