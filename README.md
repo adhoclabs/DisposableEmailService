@@ -21,7 +21,7 @@ If your service has an RDS instance that we will need to add monitoring to in Pr
 9. Save.
 #### Setting up initial Cloudwatch Alarms
 1. authenticate with aws-mfa on the command line
-2. Open the script in the `misc` repo, located at `[repo]/scripts/cloudwatch/create_rds_db_cloudwatch_alarms.py`
+2. Open the RDS script in the `misc` repo, located at `[repo]/scripts/cloudwatch`
 3. edit the service name, rds instance name, and threshold values at the top of the script.
 4. WARN THE `#prod-alerts` Slack channel that they will see a bunch of incoming alerts for the new service
 5. run the script. (Note - if you mess anything up, re-running the script will properly update the alarms as long as you keep the service name the same)
