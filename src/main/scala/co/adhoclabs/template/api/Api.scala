@@ -17,7 +17,14 @@ import scala.concurrent.duration._
 
 trait Api extends ApiBase
 
-class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, healthManager: HealthManager, actorSystem: ActorSystem, executionContext: ExecutionContext) extends Api {
+class ApiImpl(
+  implicit
+  actorSystem: ActorSystem,
+  albumManager: AlbumManager,
+  executionContext: ExecutionContext,
+  songManager: SongManager,
+  healthManager: HealthManager,
+) extends Api {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -25,12 +32,16 @@ class ApiImpl(implicit albumManager: AlbumManager, songManager: SongManager, hea
   val songApi: SongApi = new SongApiImpl
   val albumApi: AlbumApi = new AlbumApiImpl
 
-  override val routes: Route = healthApi.routes ~
+  override val routes: Route = {
+    concat(
+      healthApi.routes,
       logRequestResult(LoggingMagnet(_ =>requestAndResponseLoggingHandler)) {
         handleExceptions(exceptionHandler) {
           songApi.routes ~ albumApi.routes
         }
       }
+    )
+  }
 
   private def logRequestResponse(request: HttpRequest, response: HttpResponse): Unit = {
     val timeout = 10.millis
