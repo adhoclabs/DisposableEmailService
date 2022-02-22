@@ -6,8 +6,8 @@ This template has a number of examples of how to perform different database acti
 ## postman collection
 https://www.getpostman.com/collections/e7a9243edc39f2ab5ffd
 
-##monitoring for your new service
-###RDS
+## monitoring for your new service
+### RDS
 If your service has an RDS instance that we will need to add monitoring to in Prod...
 #### Create a "tactical" DB Dashboard
 1. Log into the AWS console
