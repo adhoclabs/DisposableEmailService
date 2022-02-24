@@ -7,12 +7,12 @@ import java.time.Instant
 import java.util.UUID
 
 case class Song(
-  id: UUID,
-  title: String,
-  albumId: UUID,
+  id:            UUID,
+  title:         String,
+  albumId:       UUID,
   albumPosition: Int,
-  createdAt: Instant,
-  updatedAt: Instant
+  createdAt:     Instant,
+  updatedAt:     Instant
 )
 
 object Song extends BaseJsonProtocol {
@@ -40,8 +40,8 @@ object Song extends ((UUID, String, UUID, Int) => Song) {
 */
 
 case class CreateSongRequest(
-  title: String,
-  albumId: UUID,
+  title:         String,
+  albumId:       UUID,
   albumPosition: Int
 )
 

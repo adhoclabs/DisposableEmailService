@@ -26,5 +26,5 @@ class HealthApiTest extends ApiTestBase {
       }
     }
   }
-  
+
 }

@@ -45,7 +45,7 @@ class SongDaoTest extends DataTestBase {
           case Some(gottenSong) =>
             assert(gottenSong == expectedSong)
 
-            val expectedUpdatedSong = expectedSong.copy(title = "updated title", albumId = existingAlbum2.id, albumPosition = 145)
+            val expectedUpdatedSong = expectedSong.copy(title         = "updated title", albumId = existingAlbum2.id, albumPosition = 145)
             songDao.update(expectedUpdatedSong) flatMap {
               case Some(updatedSong) =>
                 assert(updatedSong == expectedUpdatedSong)

@@ -16,7 +16,7 @@ object Genre extends Enumeration with DefaultJsonProtocol {
 
   implicit object GenreFormat extends RootJsonFormat[Genre] {
     def enumClassName: String = "Genre"
-    
+
     def write(genre: Genre): JsObject = JsObject(("id", JsNumber(genre.id)), ("name", JsString(genre.toString)))
 
     def read(jsValue: JsValue): Genre = {
@@ -27,13 +27,13 @@ object Genre extends Enumeration with DefaultJsonProtocol {
 
       def tryGetValueFromString(name: String): Value = values.find(_.toString == name) match {
         case Some(genre: Genre) => genre
-        case None => throw DeserializationException(s"No corresponding $enumClassName value exists for name $name.")
+        case None               => throw DeserializationException(s"No corresponding $enumClassName value exists for name $name.")
       }
 
       def tryGetValueFromObject(jsValue: JsValue): Value =
         jsValue.asJsObject.getFields("id") match {
           case Seq(JsNumber(id)) => tryGetValueFromInt(id.toIntExact)
-          case _ => throw DeserializationException(s"Unable to parse value $jsValue supplied for $enumClassName")
+          case _                 => throw DeserializationException(s"Unable to parse value $jsValue supplied for $enumClassName")
         }
 
       // This implementation of `read` first attempts to read a plain numeric ID in the genre field,
@@ -41,9 +41,9 @@ object Genre extends Enumeration with DefaultJsonProtocol {
       // out of an object and find the genre using that.
       // This might be more generous than you want to be with how you expect clients to send you enum values.
       jsValue match {
-        case JsNumber(id) => tryGetValueFromInt(id.toIntExact)
+        case JsNumber(id)   => tryGetValueFromInt(id.toIntExact)
         case JsString(name) => tryGetValueFromString(name)
-        case _ => tryGetValueFromObject(jsValue)
+        case _              => tryGetValueFromObject(jsValue)
       }
     }
   }

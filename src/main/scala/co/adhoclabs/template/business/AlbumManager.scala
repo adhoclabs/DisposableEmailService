@@ -21,7 +21,7 @@ trait AlbumManager extends BusinessBase {
   def delete(id: UUID): Future[Unit]
 }
 
-class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: AnalyticsManager, clock: Clock, executionContext: ExecutionContext) extends AlbumManager {
+class AlbumManagerImpl(implicit albumDao: AlbumDao, analyticsManager: AnalyticsManager, clock: Clock, executionContext: ExecutionContext) extends AlbumManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def getWithSongs(id: UUID): Future[Option[AlbumWithSongs]] = albumDao.getWithSongs(id)
@@ -36,10 +36,10 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
 
     val now: Instant = clock.instant()
     val album = Album(
-      id = UUID.randomUUID,
-      title = createAlbumRequest.title,
-      artists = createAlbumRequest.artists,
-      genre = createAlbumRequest.genre,
+      id        = UUID.randomUUID,
+      title     = createAlbumRequest.title,
+      artists   = createAlbumRequest.artists,
+      genre     = createAlbumRequest.genre,
       createdAt = now,
       updatedAt = now
     )
@@ -49,12 +49,12 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
         .zipWithIndex
         .map {
           case (title, index) => Song(
-            id = UUID.randomUUID,
-            title = title,
-            albumId = album.id,
+            id            = UUID.randomUUID,
+            title         = title,
+            albumId       = album.id,
             albumPosition = index + 1,
-            createdAt = now,
-            updatedAt = now
+            createdAt     = now,
+            updatedAt     = now
           )
         }
     )
@@ -92,21 +92,21 @@ class AlbumManagerImpl (implicit albumDao: AlbumDao, analyticsManager: Analytics
     def patchTitle(titleO: Option[String]): Album = {
       titleO match {
         case Some(title) => album.copy(title = title)
-        case None => album
+        case None        => album
       }
     }
 
     def patchGenre(genreO: Option[Genre]): Album = {
       genreO match {
         case Some(genre) => album.copy(genre = genre)
-        case None => album
+        case None        => album
       }
     }
 
     def patchArtists(artistsO: Option[List[String]]): Album = {
       artistsO match {
         case Some(artists) => album.copy(artists = artists)
-        case None => album
+        case None          => album
       }
     }
   }

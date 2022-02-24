@@ -16,10 +16,10 @@ class AlbumApiTest extends ApiTestBase {
   val expectedAlbumWithSongs = generateAlbumWithSongs()
 
   val createAlbumRequest = CreateAlbumRequest(
-    title = expectedAlbumWithSongs.album.title,
+    title   = expectedAlbumWithSongs.album.title,
     artists = expectedAlbumWithSongs.album.artists,
-    genre = expectedAlbumWithSongs.album.genre,
-    songs = expectedAlbumWithSongs.songs.map(_.title)
+    genre   = expectedAlbumWithSongs.album.genre,
+    songs   = expectedAlbumWithSongs.songs.map(_.title)
   )
 
   describe("GET /albums/:id") {
@@ -36,8 +36,8 @@ class AlbumApiTest extends ApiTestBase {
 
     it("should call AlbumManager.get and return a 404 when album doesn't exist") {
       (albumManager.getWithSongs _)
-          .expects(expectedAlbumWithSongs.album.id)
-          .returning(Future.successful(None))
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(None))
 
       Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.NotFound)
@@ -47,15 +47,15 @@ class AlbumApiTest extends ApiTestBase {
 
   describe("PATCH /albums/:id") {
     val patchRequest = PatchAlbumRequest(
-      title = Some(expectedAlbumWithSongs.album.title),
+      title   = Some(expectedAlbumWithSongs.album.title),
       artists = Some(expectedAlbumWithSongs.album.artists),
-      genre = Some(expectedAlbumWithSongs.album.genre)
+      genre   = Some(expectedAlbumWithSongs.album.genre)
     )
 
     it("should call AlbumManager.update and return updated song when it exists") {
       (albumManager.patch _)
-          .expects(expectedAlbumWithSongs.album.id, patchRequest)
-          .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
+        .expects(expectedAlbumWithSongs.album.id, patchRequest)
+        .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
 
       val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
 
@@ -67,8 +67,8 @@ class AlbumApiTest extends ApiTestBase {
 
     it("should call AlbumManager.update and return a 404 when album doesn't exist") {
       (albumManager.patch _)
-          .expects(expectedAlbumWithSongs.album.id, patchRequest)
-          .returning(Future.successful(None))
+        .expects(expectedAlbumWithSongs.album.id, patchRequest)
+        .returning(Future.successful(None))
 
       val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
 
@@ -81,8 +81,8 @@ class AlbumApiTest extends ApiTestBase {
   describe("POST /albums") {
     it("should call AlbumManager.create and return a 201 Created response when creation is successful") {
       (albumManager.create _)
-          .expects(createAlbumRequest)
-          .returning(Future.successful(expectedAlbumWithSongs))
+        .expects(createAlbumRequest)
+        .returning(Future.successful(expectedAlbumWithSongs))
 
       val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
 
@@ -94,8 +94,8 @@ class AlbumApiTest extends ApiTestBase {
 
     it("should call AlbumManager.create and return a 500 response when creation is not successful") {
       (albumManager.create _)
-          .expects(createAlbumRequest)
-          .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
+        .expects(createAlbumRequest)
+        .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
 
       val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
 
@@ -106,8 +106,8 @@ class AlbumApiTest extends ApiTestBase {
 
     it("should call AlbumManager.create and return a 400 response when album already exists") {
       (albumManager.create _)
-          .expects(createAlbumRequest)
-          .throwing(AlbumAlreadyExistsException("album already exists"))
+        .expects(createAlbumRequest)
+        .throwing(AlbumAlreadyExistsException("album already exists"))
 
       val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
 
@@ -121,8 +121,8 @@ class AlbumApiTest extends ApiTestBase {
       val createAlbumRequestNoSongs = createAlbumRequest.copy(songs = List.empty[String])
 
       (albumManager.create _)
-          .expects(createAlbumRequestNoSongs)
-          .throwing(NoSongsInAlbumException(createAlbumRequestNoSongs))
+        .expects(createAlbumRequestNoSongs)
+        .throwing(NoSongsInAlbumException(createAlbumRequestNoSongs))
 
       val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequestNoSongs.toJson}""")
 

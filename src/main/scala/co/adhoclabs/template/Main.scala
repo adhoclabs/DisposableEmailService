@@ -90,10 +90,10 @@ object Analytics {
   private implicit val sqsClient: SqsClientImpl = (awsAccessKeyO, awsSecretAccessKeyO, awsRegionO) match {
     case (Some(accessKey: String), Some(secretAccessKey: String), Some(region: String)) =>
       val queues: List[SqsQueue] = queueNames.map(queueName => SqsQueue(
-        queueName = queueName,
-        accessKeyId = accessKey,
+        queueName       = queueName,
+        accessKeyId     = accessKey,
         secretAccessKey = secretAccessKey,
-        regionName = region
+        regionName      = region
       ))
       new SqsClientImpl((queueNames zip queues).toMap)
     case _ => throw new AnalyticsSqsClientFailedToInitializeException
