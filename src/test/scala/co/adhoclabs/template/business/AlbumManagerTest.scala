@@ -44,7 +44,7 @@ class AlbumManagerTest extends BusinessTestBase {
       title   = expectedAlbumWithSongs.album.title,
       artists = expectedAlbumWithSongs.album.artists,
       genre   = expectedAlbumWithSongs.album.genre,
-      songs   = expectedAlbumWithSongs.songs.map(_.title),
+      songs   = expectedAlbumWithSongs.songs.map(_.title)
     )
 
     it("should call AlbumDao.create and return an album when successful") {
