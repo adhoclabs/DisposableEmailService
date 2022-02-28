@@ -19,11 +19,11 @@ trait Api extends ApiBase
 
 class ApiImpl(
   implicit
-  actorSystem: ActorSystem,
-  albumManager: AlbumManager,
+  actorSystem:      ActorSystem,
+  albumManager:     AlbumManager,
   executionContext: ExecutionContext,
-  songManager: SongManager,
-  healthManager: HealthManager,
+  songManager:      SongManager,
+  healthManager:    HealthManager
 ) extends Api {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -35,7 +35,7 @@ class ApiImpl(
   override val routes: Route = {
     concat(
       healthApi.routes,
-      logRequestResult(LoggingMagnet(_ =>requestAndResponseLoggingHandler)) {
+      logRequestResult(LoggingMagnet(_ => requestAndResponseLoggingHandler)) {
         handleExceptions(exceptionHandler) {
           songApi.routes ~ albumApi.routes
         }
@@ -54,10 +54,10 @@ class ApiImpl(
 
       logger.info(
         (s"${response.status} " +
-            s"${request.method.name} " +
-            s"${request.uri} " +
-            s"REQUEST BODY: $requestBodyString " +
-            s"RESPONSE BODY: $responseBodyString").replace("\n", "")
+          s"${request.method.name} " +
+          s"${request.uri} " +
+          s"REQUEST BODY: $requestBodyString " +
+          s"RESPONSE BODY: $responseBodyString").replace("\n", "")
       )
     }
   }
@@ -67,16 +67,16 @@ class ApiImpl(
     request.entity.toStrict(timeout).map(_.data) map { requestBodyAsBytes: ByteString =>
       logger.info(
         (s"REJECTED: " +
-            s"${request.method.name} " +
-            s"${request.uri} " +
-            s"REQUEST BODY: ${requestBodyAsBytes.utf8String} " +
-            s"REJECTIONS: [${rejections.mkString(", ")}]").replace("\n", "")
+          s"${request.method.name} " +
+          s"${request.uri} " +
+          s"REQUEST BODY: ${requestBodyAsBytes.utf8String} " +
+          s"REJECTIONS: [${rejections.mkString(", ")}]").replace("\n", "")
       )
     }
   }
 
   protected def requestAndResponseLoggingHandler(request: HttpRequest): RouteResult => Unit = {
-    case Complete(response) => logRequestResponse(request, response)
+    case Complete(response)   => logRequestResponse(request, response)
     case Rejected(rejections) => logRequestRejection(request, rejections)
   }
 

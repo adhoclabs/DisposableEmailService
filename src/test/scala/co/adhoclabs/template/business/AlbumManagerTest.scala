@@ -23,17 +23,17 @@ class AlbumManagerTest extends BusinessTestBase {
 
       albumManager.getWithSongs(expectedAlbumWithSongs.album.id) map {
         case Some(albumWithSongs) => assert(albumWithSongs == expectedAlbumWithSongs)
-        case None => fail
+        case None                 => fail
       }
     }
 
     it("should return None when the album doesn't exist") {
       (albumDao.getWithSongs _)
-          .expects(expectedAlbumWithSongs.album.id)
-          .returning(Future.successful(None))
+        .expects(expectedAlbumWithSongs.album.id)
+        .returning(Future.successful(None))
 
       albumManager.getWithSongs(expectedAlbumWithSongs.album.id) flatMap {
-        case None => succeed
+        case None    => succeed
         case Some(_) => fail
       }
     }
@@ -41,16 +41,16 @@ class AlbumManagerTest extends BusinessTestBase {
 
   describe("create") {
     val createAlbumRequest = CreateAlbumRequest(
-      title = expectedAlbumWithSongs.album.title,
+      title   = expectedAlbumWithSongs.album.title,
       artists = expectedAlbumWithSongs.album.artists,
-      genre = expectedAlbumWithSongs.album.genre,
-      songs = expectedAlbumWithSongs.songs.map(_.title),
+      genre   = expectedAlbumWithSongs.album.genre,
+      songs   = expectedAlbumWithSongs.songs.map(_.title)
     )
 
-    it("should call AlbumDao.create and return an album when successful"){
+    it("should call AlbumDao.create and return an album when successful") {
       (albumDao.create _)
-          .expects(*)
-          .returning(Future.successful(expectedAlbumWithSongs))
+        .expects(*)
+        .returning(Future.successful(expectedAlbumWithSongs))
 
       (analyticsManager.trackEvent _)
         .expects(AlbumCreatedAnalyticsEvent(expectedAlbumWithSongs.album))
@@ -69,15 +69,15 @@ class AlbumManagerTest extends BusinessTestBase {
 
     it("should throw an exception from AlbumDao.create when attempting to create an album with an ID that already exists") {
       (albumDao.create _)
-          .expects(*)
-          .returning(Future.failed(AlbumAlreadyExistsException("album already exists")))
+        .expects(*)
+        .returning(Future.failed(AlbumAlreadyExistsException("album already exists")))
 
       recoverToSucceededIf[AlbumAlreadyExistsException] {
         albumManager.create(createAlbumRequest)
       }
     }
   }
-  
+
   describe("patch") {
     val expectedUpdatedAlbum = expectedAlbumWithSongs.album.copy(
       title = "Updated Title",
@@ -93,12 +93,12 @@ class AlbumManagerTest extends BusinessTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
       (albumDao.update _)
-          .expects(expectedUpdatedAlbum)
-          .returning(Future.successful(Some(expectedUpdatedAlbum)))
+        .expects(expectedUpdatedAlbum)
+        .returning(Future.successful(Some(expectedUpdatedAlbum)))
 
       albumManager.patch(expectedAlbumWithSongs.album.id, patchRequest) map {
         case Some(updatedAlbum: Album) => assert(updatedAlbum == expectedUpdatedAlbum)
-        case None => fail
+        case None                      => fail
       }
     }
 
@@ -108,7 +108,7 @@ class AlbumManagerTest extends BusinessTestBase {
         .returning(Future.successful(None))
 
       albumManager.patch(expectedAlbumWithSongs.album.id, patchRequest) map {
-        case None => succeed
+        case None           => succeed
         case Some(_: Album) => fail
       }
     }

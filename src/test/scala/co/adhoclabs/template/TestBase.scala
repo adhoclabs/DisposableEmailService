@@ -20,10 +20,10 @@ abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInsta
 
   protected def generateAlbum(genre: Genre = Classical): Album = {
     Album(
-      id = UUID.randomUUID,
-      title = "Album Title",
-      artists = List("Artist 1", "Artist 2"),
-      genre = genre,
+      id        = UUID.randomUUID,
+      title     = "Album Title",
+      artists   = List("Artist 1", "Artist 2"),
+      genre     = genre,
       createdAt = testClock.instant(),
       updatedAt = testClock.instant()
     )
@@ -38,10 +38,10 @@ abstract class TestBase extends AsyncFunSpec with AsyncMockFactory with OneInsta
     Song(
       UUID.randomUUID,
       s"Song $albumPosition",
-      albumId = albumId,
+      albumId       = albumId,
       albumPosition = albumPosition,
-      createdAt = testClock.instant(),
-      updatedAt = testClock.instant()
+      createdAt     = testClock.instant(),
+      updatedAt     = testClock.instant()
     )
   }
 }

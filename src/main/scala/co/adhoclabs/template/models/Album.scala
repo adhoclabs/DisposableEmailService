@@ -8,10 +8,10 @@ import java.time.Instant
 import java.util.UUID
 
 case class Album(
-  id: UUID,
-  title: String,
-  artists: List[String],
-  genre: Genre = NoGenre,
+  id:        UUID,
+  title:     String,
+  artists:   List[String],
+  genre:     Genre        = NoGenre,
   createdAt: Instant,
   updatedAt: Instant
 )
@@ -30,10 +30,10 @@ object AlbumWithSongs extends BaseJsonProtocol {
 }
 
 case class CreateAlbumRequest(
-  title: String,
+  title:   String,
   artists: List[String],
-  genre: Genre,
-  songs: List[String]
+  genre:   Genre,
+  songs:   List[String]
 )
 
 object CreateAlbumRequest extends BaseJsonProtocol {
@@ -41,9 +41,9 @@ object CreateAlbumRequest extends BaseJsonProtocol {
 }
 
 case class PatchAlbumRequest(
-  title: Option[String] = None,
+  title:   Option[String]       = None,
   artists: Option[List[String]] = None,
-  genre: Option[Genre] = None
+  genre:   Option[Genre]        = None
 )
 
 object PatchAlbumRequest extends BaseJsonProtocol {

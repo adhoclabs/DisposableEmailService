@@ -21,7 +21,7 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override val routes: Route = pathPrefix("albums") {
-    concat (
+    concat(
       pathEnd {
         post {
           postAlbumRoute
@@ -30,7 +30,7 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
       // Be aware that legacy burner users may have ids that are not valid UUIDs,
       // so we shouldn't make user id fields UUIDs
       pathPrefix(JavaUUID) { id: UUID =>
-        concat (
+        concat(
           pathEnd {
             concat(
               get {
@@ -55,7 +55,6 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
         albumManager.getWithSongs(id)
       }
     }
-
 
   def postAlbumRoute: Route =
     entity(as[CreateAlbumRequest]) { albumRequest: CreateAlbumRequest =>

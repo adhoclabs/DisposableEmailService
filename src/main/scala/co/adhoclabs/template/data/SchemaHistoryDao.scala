@@ -29,9 +29,9 @@ class SchemaHistoryDaoImpl(implicit db: Database) extends DaoBase with SchemaHis
   override def getLatest(): Future[SchemaHistory] = {
     db.run(
       schemaHistories
-          .sortBy(_.version.desc)
-          .result
-          .head
+        .sortBy(_.version.desc)
+        .result
+        .head
     )
   }
 }

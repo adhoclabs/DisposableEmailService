@@ -44,9 +44,9 @@ class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext, clo
   override def get(id: UUID): Future[Option[Song]] = {
     db.run(
       songs
-          .filterById(id)
-          .result
-          .headOption
+        .filterById(id)
+        .result
+        .headOption
     )
   }
 
@@ -54,50 +54,50 @@ class SongDaoImpl(implicit db: Database, executionContext: ExecutionContext, clo
     db.run(
       (songs.returning(songs) += song).asTry
     ) map {
-      case Success(s: Song) => s
-      case Failure(e: PSQLException) =>
-        if (DaoBase.isUniqueConstraintViolation(e))
-          throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
-        else
-          throw e
-      case Failure(t: Throwable) =>
-        throw t
-    }
+        case Success(s: Song) => s
+        case Failure(e: PSQLException) =>
+          if (DaoBase.isUniqueConstraintViolation(e))
+            throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
+          else
+            throw e
+        case Failure(t: Throwable) =>
+          throw t
+      }
   }
 
   override def createMany(songsToAdd: List[Song]): Future[List[Song]] = {
     db.run(
       (songs.returning(songs) ++= songsToAdd).asTry
     ) map {
-      case Success(s: Seq[Song]) => s.toList
-      case Failure(e: PSQLException) =>
-        if (DaoBase.isUniqueConstraintViolation(e))
-          throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
-        else
-          throw e
-      case Failure(t: Throwable) =>
-        throw t
-    }
+        case Success(s: Seq[Song]) => s.toList
+        case Failure(e: PSQLException) =>
+          if (DaoBase.isUniqueConstraintViolation(e))
+            throw SongAlreadyExistsException(e.getServerErrorMessage.getMessage)
+          else
+            throw e
+        case Failure(t: Throwable) =>
+          throw t
+      }
   }
 
   override def update(song: Song): Future[Option[Song]] = {
     db.run(
       songs
-          .filterById(song.id)
-          .update(song)
+        .filterById(song.id)
+        .update(song)
     ) flatMap { rowsAffected: Int =>
-      if (rowsAffected == 1)
-        get(song.id)
-      else
-        Future.successful(None)
-    }
+        if (rowsAffected == 1)
+          get(song.id)
+        else
+          Future.successful(None)
+      }
   }
 
   override def delete(id: UUID): Future[Int] = {
     db.run(
       songs
-          .filterById(id)
-          .delete
+        .filterById(id)
+        .delete
     )
   }
 

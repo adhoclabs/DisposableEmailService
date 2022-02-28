@@ -18,7 +18,7 @@ class SecretsManagerImpl(implicit secretsClient: SecretsClient) extends SecretsM
   override def getFakeApiKey(): ApiKey = {
     fakeApiKey match {
       case Some(auth) => auth
-      case None => secretsClient.getSecret[ApiKey](fakeApiKeySecretId)
+      case None       => secretsClient.getSecret[ApiKey](fakeApiKeySecretId)
     }
   }
 
@@ -28,7 +28,7 @@ class SecretsManagerImpl(implicit secretsClient: SecretsClient) extends SecretsM
   override def getFakeApiKeyAndSecret(): ApiKeyAndSecret = {
     fakeApiKeyAndSecret match {
       case Some(auth) => auth
-      case None => secretsClient.getSecret[ApiKeyAndSecret](fakeApiKeyAndSecretSecretId)
+      case None       => secretsClient.getSecret[ApiKeyAndSecret](fakeApiKeyAndSecretSecretId)
     }
   }
 
@@ -38,7 +38,7 @@ class SecretsManagerImpl(implicit secretsClient: SecretsClient) extends SecretsM
   override def getFakeAuth(): UsernamePassword = {
     fakeAuth match {
       case Some(auth) => auth
-      case None => secretsClient.getSecret[UsernamePassword](fakeAuthSecretId)
+      case None       => secretsClient.getSecret[UsernamePassword](fakeAuthSecretId)
     }
   }
 }

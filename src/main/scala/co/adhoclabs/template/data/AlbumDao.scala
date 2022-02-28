@@ -76,17 +76,17 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
         where a.id = $id
         order by s.album_position
          """.as[(Album, Option[Song])]
-      db.run(
-        queryAction
-      ) map { rows: Seq[(Album, Option[Song])] =>
-        rows.headOption match {
-          case Some((album, _)) =>
-            val albumSongs: List[Song] = rows.flatMap(_._2).toList
-            Some(AlbumWithSongs(album, albumSongs))
-          case None =>
-            None
-        }
+    db.run(
+      queryAction
+    ) map { rows: Seq[(Album, Option[Song])] =>
+      rows.headOption match {
+        case Some((album, _)) =>
+          val albumSongs: List[Song] = rows.flatMap(_._2).toList
+          Some(AlbumWithSongs(album, albumSongs))
+        case None =>
+          None
       }
+    }
   }
 
   override def create(albumToCreate: AlbumWithSongs): Future[AlbumWithSongs] = {
@@ -119,7 +119,7 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
       albumWithSongsO <- getWithSongs(albumToCreate.album.id)
     } yield albumWithSongsO match {
       case Some(albumCreated) => albumCreated
-      case None => throw AlbumNotCreatedException(albumToCreate.album)
+      case None               => throw AlbumNotCreatedException(albumToCreate.album)
     }
   }
 
@@ -174,7 +174,7 @@ class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, cl
         DaoBase.constructAlbum(r),
         r.nextUuidOption match {
           case Some(uuid) => Some(DaoBase.constructSong(uuid, r))
-          case None => None
+          case None       => None
         }
       )
     }
