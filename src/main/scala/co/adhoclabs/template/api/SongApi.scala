@@ -1,11 +1,11 @@
 package co.adhoclabs.template.api
 
 import java.util.UUID
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import co.adhoclabs.model.EmptyResponse
 import co.adhoclabs.template.business.SongManager
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import org.slf4j.{Logger, LoggerFactory}
@@ -66,7 +66,7 @@ class SongApiImpl(implicit songManager: SongManager, executionContext: Execution
 
   def deleteSong(id: UUID): Route =
     complete {
-      songManager.delete(id).map(_ => "Song Deleted.")
+      StatusCodes.NoContent -> songManager.delete(id).map(_ => EmptyResponse())
     }
 }
 

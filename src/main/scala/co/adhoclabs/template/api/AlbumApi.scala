@@ -1,11 +1,11 @@
 package co.adhoclabs.template.api
 
 import java.util.UUID
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import co.adhoclabs.model.EmptyResponse
 import co.adhoclabs.template.business.AlbumManager
 import co.adhoclabs.template.models.{CreateAlbumRequest, PatchAlbumRequest}
 import org.slf4j.{Logger, LoggerFactory}
@@ -74,6 +74,6 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
 
   def deleteAlbumRoute(id: UUID): Route =
     complete {
-      albumManager.delete(id).map(_ => "Album deleted.")
+      StatusCodes.NoContent -> albumManager.delete(id).map(_ => EmptyResponse())
     }
 }

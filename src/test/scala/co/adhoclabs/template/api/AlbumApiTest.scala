@@ -133,13 +133,13 @@ class AlbumApiTest extends ApiTestBase {
     }
 
     describe("DELETE /albums/:id") {
-      it("should call AlbumManager.delete and return an empty 200") {
+      it("should call AlbumManager.delete and return an empty 204") {
         (albumManager.delete _)
           .expects(expectedAlbumWithSongs.album.id)
           .returning(Future.successful(()))
 
         Delete(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
-          assert(status == StatusCodes.OK)
+          assert(status == StatusCodes.NoContent)
         }
       }
     }

@@ -92,13 +92,14 @@ class SongApiTest extends ApiTestBase {
   }
 
   describe("DELETE /songs/:songId") {
-    it("should call SongManager.delete and return empty 200") {
+    it("should call SongManager.delete and return empty 204") {
       (songManager.delete _)
         .expects(expectedSong.id)
         .returning(Future.successful(()))
 
       Delete(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.OK)
+        assert(status == StatusCodes.NoContent)
+        //assert(responseAs[String] == "Song Deleted.")
       }
     }
   }
