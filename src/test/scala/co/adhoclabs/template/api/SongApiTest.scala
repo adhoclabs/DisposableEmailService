@@ -99,7 +99,6 @@ class SongApiTest extends ApiTestBase {
 
       Delete(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.NoContent)
-        //assert(responseAs[String] == "Song Deleted.")
       }
     }
   }
