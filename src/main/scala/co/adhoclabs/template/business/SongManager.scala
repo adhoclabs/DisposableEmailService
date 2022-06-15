@@ -13,7 +13,7 @@ trait SongManager extends BusinessBase {
   def get(id: UUID): Future[Option[Song]]
   def create(createSongRequest: CreateSongRequest): Future[Song]
   def update(song: Song): Future[Option[Song]]
-  def delete(id: UUID): Future[Unit] // added this
+  def delete(id: UUID): Future[Unit]
 }
 
 class SongManagerImpl(implicit songDao: SongDao, clock: Clock, executionContext: ExecutionContext) extends SongManager {
@@ -36,7 +36,6 @@ class SongManagerImpl(implicit songDao: SongDao, clock: Clock, executionContext:
 
   override def update(song: Song): Future[Option[Song]] = songDao.update(song)
 
-  //added definition for delete
-  //used album api & manager for inspiration
+
   override def delete(id: UUID): Future[Unit] = songDao.delete(id).map(_ => ())
 }

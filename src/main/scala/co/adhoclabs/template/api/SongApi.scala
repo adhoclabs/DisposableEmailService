@@ -35,7 +35,7 @@ class SongApiImpl(implicit songManager: SongManager, executionContext: Execution
           put {
             putSong(id)
           },
-          delete { // Added delete endpoint
+          delete {
             deleteSong(id)
           }
         )
@@ -64,7 +64,6 @@ class SongApiImpl(implicit songManager: SongManager, executionContext: Execution
     }
   }
 
-  //added definition of delete to work with songManager class and methods
   def deleteSong(id: UUID): Route =
     complete {
       songManager.delete(id).map(_ => "Song Deleted.")
