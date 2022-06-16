@@ -90,4 +90,16 @@ class SongManagerTest extends BusinessTestBase {
       }
     }
   }
+
+  describe("delete") {
+    it("should return unit if song was deleted") {
+      (songDao.delete _)
+        .expects(expectedSong.id)
+        .returning(Future.successful(0))
+
+      songManager.delete(expectedSong.id) map { _ =>
+        succeed
+      }
+    }
+  }
 }

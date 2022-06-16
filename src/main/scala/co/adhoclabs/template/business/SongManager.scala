@@ -1,22 +1,22 @@
 package co.adhoclabs.template.business
 
 import java.time.{Clock, Instant}
-
 import co.adhoclabs.template.data.SongDao
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
-import java.util.UUID
 
+import java.util.UUID
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait SongManager extends BusinessBase {
   def get(id: UUID): Future[Option[Song]]
   def create(createSongRequest: CreateSongRequest): Future[Song]
   def update(song: Song): Future[Option[Song]]
+  def delete(id: UUID): Future[Unit]
 }
 
-class SongManagerImpl(implicit songDao: SongDao, clock: Clock) extends SongManager {
+class SongManagerImpl(implicit songDao: SongDao, clock: Clock, executionContext: ExecutionContext) extends SongManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def get(id: UUID): Future[Option[Song]] = songDao.get(id)
@@ -35,4 +35,7 @@ class SongManagerImpl(implicit songDao: SongDao, clock: Clock) extends SongManag
   }
 
   override def update(song: Song): Future[Option[Song]] = songDao.update(song)
+
+
+  override def delete(id: UUID): Future[Unit] = songDao.delete(id).map(_ => ())
 }
