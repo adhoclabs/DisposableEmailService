@@ -1,0 +1,40 @@
+cluster:
+  namespace: qa1
+
+image:
+  tag: "@sha256:97934dfc33064115468dfc2c03c06cf514898dd8bea6a9ad5d206d6be73916f5"
+
+awsSettings:
+  accessKey: qa1-access-key
+    secretKey: qa1-secret
+    region: us-west-2
+
+appSettings:
+  javaOpts: "-Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms256m -Xmx1g"
+  replicas: 2
+  secretsMgrKeyID: qa1-TEMPLATE_SVC_BASE
+  db:
+    hostname: qa1-TEMPLATE_SVC_BASE-rds
+    password: qa1-TEMPLATE_SVC_BASE-db-password
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "2000m"
+      memory: "1124Mi"
+
+configMap:
+  preserveOldReleases: true
+
+argoStrategy:
+  canary:
+    antiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        weight: 1
+    maxSurge: "100%"
+    maxUnavailable: "0"
+    steps:
+    - setWeight: 50
+    - pause:
+        duration: 30s
