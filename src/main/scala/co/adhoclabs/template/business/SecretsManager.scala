@@ -10,7 +10,7 @@ trait SecretsManager {
 }
 
 class SecretsManagerImpl(implicit secretsClient: SecretsClient) extends SecretsManager {
-  private val secretsConfig = Configuration.config.getConfig("co.adhoclabs.telephony.secrets.secret_ids")
+  private val secretsConfig = Configuration.config.getConfig("co.adhoclabs.template.secrets.secret_ids")
 
   private val fakeApiKeySecretId: String = secretsConfig.getString("fake_api_key")
   private val fakeApiKey: Option[ApiKey] = None

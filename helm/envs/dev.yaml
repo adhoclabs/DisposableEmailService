@@ -1,0 +1,17 @@
+cluster:
+  namespace: dev
+
+image:
+  tag: "@sha256:97934dfc33064115468dfc2c03c06cf514898dd8bea6a9ad5d206d6be73916f5"
+
+awsSettings:
+  accessKey: dev-access-key
+  secretKey: dev-secret
+  region: us-west-2
+
+appSettings:
+  replicas: 2
+  secretsMgrKeyID: dev-TEMPLATE_SVC_BASE
+  db:
+    hostname: dev-TEMPLATE_SVC_BASE-rds
+    password: dev-TEMPLATE_SVC_BASE-db-password

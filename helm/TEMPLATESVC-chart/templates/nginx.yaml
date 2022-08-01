@@ -1,0 +1,25 @@
+apiVersion: v1
+data:
+  nginx.conf: |-
+    server {
+      listen {{ .Values.nginxSettings.port }} default_server;
+      listen [::]:{{ .Values.nginxSettings.port }} default_server;
+
+      server_name {{ .Values.cluster.namespace}}-TEMPLATE_SVC_BASE.burnerapp.com;
+      access_log  off;
+      server_tokens off;
+      keepalive_requests 100;
+      keepalive_time 20s;
+
+      location / {
+          proxy_pass http://localhost:{{ .Values.appSettings.port }}/;
+      }
+    }
+kind: ConfigMap
+metadata:
+{{- if .Values.configMap.preserveOldReleases }}
+  annotations:
+    "helm.sh/resource-policy": keep
+{{- end }}
+  name: nginx-TEMPLATE_SVC_BASE-service-{{ include "TEMPLATE_SVC_BASE-chart.cm-suffix" . }}
+  namespace: {{ .Values.cluster.namespace }}
