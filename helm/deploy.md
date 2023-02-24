@@ -9,7 +9,6 @@ Always `cd` into the `/helm` folder of this repo.
     
     helm upgrade TEMPLATE_SVC_BASE-service TEMPLATE_SVC_BASE-chart -f ./envs/dev.yaml -n dev
     helm upgrade TEMPLATE_SVC_BASE-service TEMPLATE_SVC_BASE-chart -f ./envs/qa1.yaml -n qa1
-    helm upgrade TEMPLATE_SVC_BASE-service TEMPLATE_SVC_BASE-chart -f ./envs/qa2.yaml -n qa2
     helm upgrade TEMPLATE_SVC_BASE-service TEMPLATE_SVC_BASE-chart -f ./envs/prod.yaml -n prod
 
 You can add `--dry-run` to the above commands to generate a yaml file output

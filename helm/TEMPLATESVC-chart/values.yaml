@@ -51,6 +51,7 @@ datadog:
   enabled: false
   traceSampleRate: "0.1"
   logsInjection: "false"
+  apmHttpErrorStatuses: "400-403,405-428,430-499,500-599"
 
 service:
   port: 443

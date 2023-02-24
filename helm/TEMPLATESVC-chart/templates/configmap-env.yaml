@@ -12,6 +12,7 @@ data:
 {{- if .Values.datadog.enabled }}
   DD_ENV: {{ .Values.cluster.namespace }}
   DD_LOGS_INJECTION: {{ .Values.datadog.logsInjection | quote }}
+  DD_HTTP_SERVER_ERROR_STATUSES: {{ .Values.datadog.apmHttpErrorStatuses }}
   DD_SERVICE: TEMPLATE_SVC_BASE-service
   DD_SERVICE_MAPPING: "postgresql:TEMPLATE_SVC_BASE-db, java-aws-sdk:TEMPLATE_SVC_BASE-service"
   DD_TRACE_SAMPLE_RATE: {{ .Values.datadog.traceSampleRate | quote }}
