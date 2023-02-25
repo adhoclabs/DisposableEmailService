@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 
-if [ -z "${NEW_RELIC_PATH}" ]
+if [ -z "${DATADOG_PATH}" ]
 then
-    echo "NEW_RELIC_PATH not set"
-    exit 1
+  echo "DATADOG_PATH not set"
+  exit 1
 fi
 
-if [ -z "${NEW_RELIC_CHECKSUM}" ]
+if [ -z "${DATADOG_CHECKSUM}" ]
 then
-    echo "NEW_RELIC_CHECKSUM not set"
-    exit 1
+  echo "DATADOG_CHECKSUM not set"
+  exit 1
 fi
 
-aws s3 cp ${NEW_RELIC_PATH} ./cicd/newrelic/newrelic.jar
-GOT_NR_SUM=$(sha256sum ./cicd/newrelic/newrelic.jar | awk '{print $1}')
-if [ "${GOT_NR_SUM}" != "${NEW_RELIC_CHECKSUM}" ]
-then 
-    echo "Checksum doesn't match ${GOT_NR_SUM} != ${NEW_RELIC_CHECKSUM}"
-    exit 1 
+aws s3 cp ${DATADOG_PATH} ./cicd/datadog/dd-agent.jar
+GOT_DD_SUM=$(sha256sum ./cicd/datadog/dd-agent.jar | awk '{print $1}')
+if [ "${GOT_DD_SUM}" != "${DATADOG_CHECKSUM}" ]
+then
+  echo "Checksum doesn't match ${GOT_DD_SUM} != ${NEW_DD_CHECKSUM}"
+  exit 1
 fi
-
 exit 0

@@ -3,9 +3,11 @@ FROM openjdk:11.0.8-jre
 ARG jar_path
 ENV JAR=$jar_path
 
-RUN mkdir -p /app /opt/newrelic
-COPY ./cicd/newrelic/newrelic.jar /opt/newrelic/
-COPY ./cicd/newrelic/newrelic.yml /opt/newrelic/
+# datadog
+RUN mkdir -p /app /opt/datadog
+COPY ./cicd/datadog/dd-agent.jar /opt/datadog/
+
+# app
 COPY ${JAR} /app/music-service.jar
 
 EXPOSE 9000
