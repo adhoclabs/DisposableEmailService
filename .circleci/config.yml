@@ -5,7 +5,7 @@ jobs:
 
   run_tests:
     docker:
-     - image: ahlops/scala-builder:2.0.2
+     - image: ahlops/scala-builder:2.0.4
     resource_class: medium
     working_directory: ~/repo
     steps:
