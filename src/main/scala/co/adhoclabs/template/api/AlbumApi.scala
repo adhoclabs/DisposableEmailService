@@ -20,60 +20,62 @@ class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: Execut
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  override val routes: Route = pathPrefix("albums") {
-    concat(
-      pathEnd {
-        post {
-          postAlbumRoute
-        }
-      },
-      // Be aware that legacy burner users may have ids that are not valid UUIDs,
-      // so we shouldn't make user id fields UUIDs
-      pathPrefix(JavaUUID) { id: UUID =>
-        concat(
-          pathEnd {
-            concat(
-              get {
-                getAlbumRoute(id)
-              },
-              patch {
-                patchAlbumRoute(id)
-              },
-              delete {
-                deleteAlbumRoute(id)
-              }
-            )
+  override val routes: Route = {
+    pathPrefix("albums") {
+      concat(
+        pathEnd {
+          post {
+            postAlbumRoute
           }
-        )
-      }
-    )
+        },
+        // Be aware that legacy burner users may have ids that are not valid UUIDs,
+        // so we shouldn't make user id fields UUIDs
+        pathPrefix(JavaUUID) { id: UUID =>
+          concat(
+            pathEnd {
+              concat(
+                get {
+                  getAlbumRoute(id)
+                },
+                patch {
+                  patchAlbumRoute(id)
+                },
+                delete {
+                  deleteAlbumRoute(id)
+                }
+              )
+            }
+          )
+        }
+      )
+    }
   }
 
-  def getAlbumRoute(id: UUID): Route =
-    rejectEmptyResponse {
-      complete {
-        albumManager.getWithSongs(id)
-      }
+  def getAlbumRoute(id: UUID): Route = {
+    return404IfFutureOptionIsEmpty {
+      albumManager.getWithSongs(id)
     }
+  }
 
-  def postAlbumRoute: Route =
+  def postAlbumRoute: Route = {
     entity(as[CreateAlbumRequest]) { albumRequest: CreateAlbumRequest =>
       complete {
         StatusCodes.Created -> albumManager.create(albumRequest)
       }
     }
+  }
 
-  def patchAlbumRoute(id: UUID): Route =
+  def patchAlbumRoute(id: UUID): Route = {
     entity(as[PatchAlbumRequest]) { patchRequest: PatchAlbumRequest =>
-      rejectEmptyResponse {
-        complete {
-          albumManager.patch(id, patchRequest)
-        }
+      return404IfFutureOptionIsEmpty {
+        albumManager.patch(id, patchRequest)
       }
     }
+  }
 
-  def deleteAlbumRoute(id: UUID): Route =
+  def deleteAlbumRoute(id: UUID): Route = {
     complete {
       StatusCodes.NoContent -> albumManager.delete(id).map(_ => EmptyResponse())
     }
+  }
 }

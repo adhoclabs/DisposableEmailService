@@ -1,7 +1,5 @@
 package co.adhoclabs.template.business
 
-import co.adhoclabs.analytics.AnalyticsManager
-import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, InvalidPatchException, NoSongsInAlbumException}
 import co.adhoclabs.template.models._
@@ -10,7 +8,7 @@ import scala.concurrent.Future
 
 class AlbumManagerTest extends BusinessTestBase {
   implicit val albumDao: AlbumDao = mock[AlbumDao]
-  implicit val analyticsManager: AnalyticsManager = mock[AnalyticsManager]
+  implicit val sqsManager: SqsManager = mock[SqsManager]
   val albumManager: AlbumManager = new AlbumManagerImpl
 
   val expectedAlbumWithSongs = generateAlbumWithSongs()
@@ -52,8 +50,8 @@ class AlbumManagerTest extends BusinessTestBase {
         .expects(*)
         .returning(Future.successful(expectedAlbumWithSongs))
 
-      (analyticsManager.trackEvent _)
-        .expects(AlbumCreatedAnalyticsEvent(expectedAlbumWithSongs.album))
+      (sqsManager.sendFakeSqsEvent _)
+        .expects("fakeSqsPayload")
         .returning(Future.successful())
 
       albumManager.create(createAlbumRequest) map { albumWithSongs: AlbumWithSongs =>

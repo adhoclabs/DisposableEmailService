@@ -18,22 +18,24 @@ class HealthApiImpl(implicit healthManager: HealthManager, executionContext: Exe
 
   // The health API is used by Kubernetes to determine whether a pod is ready to receive connections.
   // Every service should have this route.
-  override val routes: Route = pathPrefix("health") {
-    concat(
-      path("api") {
-        get {
-          complete {
-            StatusCodes.OK
+  override val routes: Route = {
+    pathPrefix("health") {
+      concat(
+        path("api") {
+          get {
+            complete {
+              StatusCodes.OK
+            }
+          }
+        },
+        path("db") {
+          get {
+            complete {
+              healthManager.executeDbGet().map(_ => StatusCodes.OK)
+            }
           }
         }
-      },
-      path("db") {
-        get {
-          complete {
-            healthManager.executeDbGet().map(_ => StatusCodes.OK)
-          }
-        }
-      }
-    )
+      )
+    }
   }
 }

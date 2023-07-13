@@ -23,13 +23,13 @@ libraryDependencies ++= Seq(
   "org.flywaydb"        %  "flyway-core"          % "7.15.0",
 
   // Our dependencies
-  "co.adhoclabs" %% "analytics" % "1.0.8",
-  "co.adhoclabs" %% "model"     % "2.2.5",
-  "co.adhoclabs" %% "secrets"   % "1.0.0",
+  "co.adhoclabs" %% "model"      % "3.4.0",
+  "co.adhoclabs" %% "secrets"    % "1.0.0",
+  "co.adhoclabs" %% "sqs_client" % "3.3.1",
 
   // Test dependencies
-  "org.scalatest"     %% "scalatest"           % "3.2.10"        % Test,
-  "org.scalamock"     %% "scalamock"           % "5.1.0"         % Test,
+  "org.scalatest"     %% "scalatest"           % "3.2.16"        % Test,
+  "org.scalamock"     %% "scalamock"           % "5.2.0"         % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion     % Test,
   "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test
 )
