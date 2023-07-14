@@ -1,8 +1,6 @@
 apiVersion: v1
 data:
   JAVA_OPTS: {{ .Values.appSettings.javaOpts }}
-  AWS_ACCESS_KEY_ID: {{ .Values.awsSettings.accessKey }}
-  AWS_SECRET_ACCESS_KEY: {{ .Values.awsSettings.secretKey }}
   AWS_REGION: {{ .Values.awsSettings.region }}
   FIREBASE_SA_KEY_ID: {{ .Values.appSettings.secretsMgrKeyID }}
   DB_NAME: {{ .Values.appSettings.db.dbname }}
