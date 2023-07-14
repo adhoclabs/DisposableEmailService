@@ -27,6 +27,10 @@ appSettings:
 configMap:
   preserveOldReleases: true
 
+# General good practice to have at least one non-prod env YAML have the same 'shape' as the prod YAML ( at least
+# as much as reasonably possible ) so we can be sure we're exercising the same codepaths when doing a helm release.
+# As such, lets make sure the argoStrategy section that gets entirely copied into the rollout has a full set of
+# _some_ defined 'steps'.
 argoStrategy:
   canary:
     antiAffinity:
@@ -37,4 +41,4 @@ argoStrategy:
     steps:
     - setWeight: 50
     - pause:
-        duration: 30s
+        duration: 15s
