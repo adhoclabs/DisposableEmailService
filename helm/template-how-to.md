@@ -33,6 +33,7 @@ Next steps for you:
 2. edit dev/qa1/qa2/prod.yaml to include proper keys/secrets/db credentials/etc
 3. local.yaml should include dev creds unless there is some other config
 4. values.yaml can include dev defaults where sensible
+5. After the first deployment (helm install) in each cluster, you will need to create a Route53 A-record alias to the loadbalancer that is autocreated for the k8s Service.
 
 You can delete this file after finishing this work.
 
