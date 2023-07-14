@@ -1,17 +1,13 @@
 package co.adhoclabs.template.business
 
-import java.time.{Clock, Instant}
-
-import co.adhoclabs.analytics.AnalyticsManager
-import co.adhoclabs.template.analytics.AlbumCreatedAnalyticsEvent
 import co.adhoclabs.template.data.AlbumDao
 import co.adhoclabs.template.exceptions.{InvalidPatchException, NoSongsInAlbumException}
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest, Song}
-import java.util.UUID
-
 import co.adhoclabs.template.models.Genre.Genre
+import co.adhoclabs.template.models._
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.time.{Clock, Instant}
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AlbumManager extends BusinessBase {
@@ -21,7 +17,7 @@ trait AlbumManager extends BusinessBase {
   def delete(id: UUID): Future[Unit]
 }
 
-class AlbumManagerImpl(implicit albumDao: AlbumDao, analyticsManager: AnalyticsManager, clock: Clock, executionContext: ExecutionContext) extends AlbumManager {
+class AlbumManagerImpl(implicit albumDao: AlbumDao, sqsManager: SqsManager, clock: Clock, executionContext: ExecutionContext) extends AlbumManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def getWithSongs(id: UUID): Future[Option[AlbumWithSongs]] = albumDao.getWithSongs(id)
@@ -60,7 +56,7 @@ class AlbumManagerImpl(implicit albumDao: AlbumDao, analyticsManager: AnalyticsM
     )
 
     albumDao.create(albumToCreate) map { albumWithSongs =>
-      analyticsManager.trackEvent(AlbumCreatedAnalyticsEvent(albumWithSongs.album))
+      sqsManager.sendFakeSqsEvent("fakeSqsPayload")
       albumWithSongs
     }
   }

@@ -1,19 +1,17 @@
 package co.adhoclabs.template
 
-import java.time.Clock
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import co.adhoclabs.analytics.{AnalyticsManager, AnalyticsManagerImpl}
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
-import co.adhoclabs.sqs_client.SqsClientImpl
-import co.adhoclabs.sqs_client.queue.SqsQueue
+import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
+import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
 import co.adhoclabs.template.api.{Api, ApiImpl}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
-import co.adhoclabs.template.exceptions.AnalyticsSqsClientFailedToInitializeException
 import com.typesafe.config.{Config, ConfigFactory}
 
+import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -47,9 +45,24 @@ object Dependencies {
   implicit val actorSystem: ActorSystem = ActorSystem("template")
   implicit val executionContext: ExecutionContext = actorSystem.dispatcher
 
+  // aws
+  private val awsConfig: Config = config.getConfig("co.adhoclabs.template.aws")
+  private val awsRegion: String = awsConfig.getString("region")
+
+  // sqs
+  private val queueNames: List[String] = List(
+    Configuration.sqsConfig.getString("fake_queue.queue_name")
+  )
+  private val queueMap: Map[String, SqsQueue] = queueNames.map(queueName =>
+    queueName -> SqsQueueWithInferredCredentials(
+      queueName  = queueName,
+      regionName = awsRegion
+    )).toMap
+  implicit val sqsClient: SqsClient = new SqsClientImpl(queueMap)
+  implicit val sqsManager: SqsManager = new SqsManagerImpl
+
   // secrets
-  private val secretsRegion: String = Configuration.config.getString("co.adhoclabs.template.secrets.region")
-  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(secretsRegion)
+  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(awsRegion)
   implicit val secretsManager: SecretsManager = new SecretsManagerImpl()
 
   // database
@@ -60,7 +73,6 @@ object Dependencies {
   implicit val albumDao: AlbumDao = new AlbumDaoImpl
 
   // business
-  implicit val analyticsManager: AnalyticsManager = Analytics.analyticsManager
   implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
@@ -71,32 +83,5 @@ object Dependencies {
 
 object Configuration {
   val config: Config = ConfigFactory.load
-}
-
-object Analytics {
-  val config: Config = Configuration.config
-
-  // These need to be made available separately via environment variable config
-  private val awsAccessKeyO: Option[String] = sys.env.get("AWS_ACCESS_KEY_ID")
-  private val awsSecretAccessKeyO: Option[String] = sys.env.get("AWS_SECRET_ACCESS_KEY")
-  private val awsRegionO: Option[String] = sys.env.get("AWS_REGION")
-
-  private val queueNames: List[String] = List(
-    config.getString("co.adhoclabs.braze-sdk.queue_name"),
-    config.getString("co.adhoclabs.braze-sdk.attributes_queue_name"),
-    config.getString("co.adhoclabs.amplitude-sdk.queue_name")
-  )
-
-  private implicit val sqsClient: SqsClientImpl = (awsAccessKeyO, awsSecretAccessKeyO, awsRegionO) match {
-    case (Some(accessKey: String), Some(secretAccessKey: String), Some(region: String)) =>
-      val queues: List[SqsQueue] = queueNames.map(queueName => SqsQueue(
-        queueName       = queueName,
-        accessKeyId     = accessKey,
-        secretAccessKey = secretAccessKey,
-        regionName      = region
-      ))
-      new SqsClientImpl((queueNames zip queues).toMap)
-    case _ => throw new AnalyticsSqsClientFailedToInitializeException
-  }
-  val analyticsManager: AnalyticsManager = new AnalyticsManagerImpl
+  val sqsConfig: Config = config.getConfig("co.adhoclabs.template.sqs")
 }

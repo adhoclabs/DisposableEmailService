@@ -20,53 +20,57 @@ class SongApiImpl(implicit songManager: SongManager, executionContext: Execution
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  override val routes: Route = pathPrefix("songs") {
-    concat(
-      pathEnd {
-        post {
-          postSong
-        }
-      },
-      path(JavaUUID) { id: UUID =>
-        concat(
-          get {
-            getSong(id)
-          },
-          put {
-            putSong(id)
-          },
-          delete {
-            deleteSong(id)
+  override val routes: Route = {
+    pathPrefix("songs") {
+      concat(
+        pathEnd {
+          post {
+            postSong
           }
-        )
-      }
-    )
+        },
+        path(JavaUUID) { id: UUID =>
+          concat(
+            get {
+              getSong(id)
+            },
+            put {
+              putSong(id)
+            },
+            delete {
+              deleteSong(id)
+            }
+          )
+        }
+      )
+    }
   }
 
-  def getSong(id: UUID): Route =
-    rejectEmptyResponse {
-      complete {
-        songManager.get(id)
-      }
-    }
-
-  def postSong: Route = entity(as[CreateSongRequest]) { songRequest: CreateSongRequest =>
-    complete {
-      StatusCodes.Created -> songManager.create(songRequest)
+  def getSong(id: UUID): Route = {
+    return404IfFutureOptionIsEmpty {
+      songManager.get(id)
     }
   }
 
-  def putSong(id: UUID): Route = entity(as[Song]) { song: Song =>
-    rejectEmptyResponse {
+  def postSong: Route = {
+    entity(as[CreateSongRequest]) { songRequest: CreateSongRequest =>
       complete {
+        StatusCodes.Created -> songManager.create(songRequest)
+      }
+    }
+  }
+
+  def putSong(id: UUID): Route = {
+    entity(as[Song]) { song: Song =>
+      return404IfFutureOptionIsEmpty {
         songManager.update(song)
       }
     }
   }
 
-  def deleteSong(id: UUID): Route =
+  def deleteSong(id: UUID): Route = {
     complete {
       StatusCodes.NoContent -> songManager.delete(id).map(_ => EmptyResponse())
     }
+  }
 }
 
