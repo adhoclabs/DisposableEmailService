@@ -12,8 +12,8 @@ cluster:
   namespace: default
 
 awsSettings:
-  accessKey: not-a-key
-  secretKey: not-a-secret
+  iamRoleArnBase: arn:aws:iam::714011589920:role
+  iamRole: dev-TEMPLATE_SVC_BASE-sa
   region: us-west-2
 
 appSettings:
