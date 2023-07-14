@@ -4,13 +4,10 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-name: {{ .Values.cluster.namespace }}-TEMPLATE_SVC_BASE-service-lb
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-west-2:714011589920:certificate/f7e0bff1-7284-4e5d-935e-bca844ba9139
-    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-    service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
-    service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "5"
-    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
-    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: {{ .Values.cluster.namespace }}-burner/TEMPLATE_SVC_BASE-service
-    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: adhoclabs-http-logs
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+    service.beta.kubernetes.io/aws-load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=adhoclabs-http-logs,access_logs.s3.prefix={{ .Values.cluster.namespace }}-burner/TEMPLATE_SVC_BASE-service
   name: TEMPLATE_SVC_BASE-service
   namespace: {{ .Values.cluster.namespace }}
 spec:
@@ -24,3 +21,4 @@ spec:
     app: TEMPLATE_SVC_BASE-service
   sessionAffinity: None
   type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
