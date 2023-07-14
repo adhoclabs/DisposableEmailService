@@ -87,7 +87,7 @@ spec:
         name: config-volume
       - configMap:
           defaultMode: 420
-          name: nginx-TEMPLATE_SVC_BASE-service-{{ include "TEMPLATE_SVC_BASE-chart.cm-suffix" . }}
+          name: nginx-TEMPLATE_SVC_BASE-service
         name: nginx-config
       {{- if .Values.datadog.enabled }}
       - hostPath:

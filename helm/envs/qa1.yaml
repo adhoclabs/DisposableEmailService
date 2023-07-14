@@ -6,8 +6,8 @@ image:
 
 awsSettings:
   accessKey: qa1-access-key
-    secretKey: qa1-secret
-    region: us-west-2
+  secretKey: qa1-secret
+  region: us-west-2
 
 appSettings:
   javaOpts: "-Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms256m -Xmx1g"
