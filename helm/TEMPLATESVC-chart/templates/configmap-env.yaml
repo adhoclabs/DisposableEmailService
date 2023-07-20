@@ -1,10 +1,8 @@
 apiVersion: v1
 data:
   JAVA_OPTS: {{ .Values.appSettings.javaOpts }}
-  AWS_ACCESS_KEY_ID: {{ .Values.awsSettings.accessKey }}
-  AWS_SECRET_ACCESS_KEY: {{ .Values.awsSettings.secretKey }}
   AWS_REGION: {{ .Values.awsSettings.region }}
-  FIREBASE_SA_KEY_ID: {{ .Values.appSettings.secretsMgrKeyID }}
+  EXAMPLE_SECRET_ID: {{ .Values.appSettings.exampleSecretId }}
   DB_NAME: {{ .Values.appSettings.db.dbname }}
   DB_HOSTNAME: {{ .Values.appSettings.db.hostname }}
   DB_USERNAME: {{ .Values.appSettings.db.username }}
@@ -12,6 +10,7 @@ data:
 {{- if .Values.datadog.enabled }}
   DD_ENV: {{ .Values.cluster.namespace }}
   DD_LOGS_INJECTION: {{ .Values.datadog.logsInjection | quote }}
+  DD_HTTP_SERVER_ERROR_STATUSES: {{ .Values.datadog.apmHttpErrorStatuses }}
   DD_SERVICE: TEMPLATE_SVC_BASE-service
   DD_SERVICE_MAPPING: "postgresql:TEMPLATE_SVC_BASE-db, java-aws-sdk:TEMPLATE_SVC_BASE-service"
   DD_TRACE_SAMPLE_RATE: {{ .Values.datadog.traceSampleRate | quote }}

@@ -5,14 +5,13 @@ image:
   tag: "@sha256:97934dfc33064115468dfc2c03c06cf514898dd8bea6a9ad5d206d6be73916f5"
 
 awsSettings:
-  accessKey: qa1-access-key
-    secretKey: qa1-secret
-    region: us-west-2
+  iamRole: qa1-TEMPLATE_SVC_BASE-service-sa
+  region: us-west-2
 
 appSettings:
   javaOpts: "-Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms256m -Xmx1g"
   replicas: 2
-  secretsMgrKeyID: qa1-TEMPLATE_SVC_BASE
+  exampleSecretId: qa1-TEMPLATE_SVC_BASE-secret-shhhh
   db:
     hostname: qa1-TEMPLATE_SVC_BASE-rds
     password: qa1-TEMPLATE_SVC_BASE-db-password
@@ -27,6 +26,10 @@ appSettings:
 configMap:
   preserveOldReleases: true
 
+# General good practice to have at least one non-prod env YAML have the same 'shape' as the prod YAML ( at least
+# as much as reasonably possible ) so we can be sure we're exercising the same codepaths when doing a helm release.
+# As such, lets make sure the argoStrategy section that gets entirely copied into the rollout has a full set of
+# _some_ defined 'steps'.
 argoStrategy:
   canary:
     antiAffinity:
@@ -37,4 +40,4 @@ argoStrategy:
     steps:
     - setWeight: 50
     - pause:
-        duration: 30s
+        duration: 15s

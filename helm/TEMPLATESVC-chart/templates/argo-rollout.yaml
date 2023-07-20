@@ -24,6 +24,7 @@ spec:
         tags.datadoghq.com/version: {{ .Chart.Version | quote }}
         {{- end }}
     spec:
+      serviceAccountName: TEMPLATE_SVC_BASE-service
       containers:
       - name: nginx
         image: "nginx{{ .Values.image.nginxTag }}"
@@ -87,7 +88,7 @@ spec:
         name: config-volume
       - configMap:
           defaultMode: 420
-          name: nginx-TEMPLATE_SVC_BASE-service-{{ include "TEMPLATE_SVC_BASE-chart.cm-suffix" . }}
+          name: nginx-TEMPLATE_SVC_BASE-service
         name: nginx-config
       {{- if .Values.datadog.enabled }}
       - hostPath:

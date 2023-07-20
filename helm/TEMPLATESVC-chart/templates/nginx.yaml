@@ -17,9 +17,5 @@ data:
     }
 kind: ConfigMap
 metadata:
-{{- if .Values.configMap.preserveOldReleases }}
-  annotations:
-    "helm.sh/resource-policy": keep
-{{- end }}
-  name: nginx-TEMPLATE_SVC_BASE-service-{{ include "TEMPLATE_SVC_BASE-chart.cm-suffix" . }}
+  name: nginx-TEMPLATE_SVC_BASE-service
   namespace: {{ .Values.cluster.namespace }}
