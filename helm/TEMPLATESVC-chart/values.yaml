@@ -13,12 +13,12 @@ cluster:
 
 awsSettings:
   iamRoleArnBase: arn:aws:iam::714011589920:role
-  iamRole: dev-TEMPLATE_SVC_BASE-sa
+  iamRole: dev-TEMPLATE_SVC_BASE-service-sa
   region: us-west-2
 
 appSettings:
   javaOpts: "-Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms100m -Xmx1g"
-  secretsMgrKeyID: dev-TEMPLATE_SVC_BASE
+  exampleSecretId: dev-TEMPLATE_SVC_BASE-secret-shhhh
   replicas: 1
   port: 9000
   db:

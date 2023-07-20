@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   JAVA_OPTS: {{ .Values.appSettings.javaOpts }}
   AWS_REGION: {{ .Values.awsSettings.region }}
-  FIREBASE_SA_KEY_ID: {{ .Values.appSettings.secretsMgrKeyID }}
+  EXAMPLE_SECRET_ID: {{ .Values.appSettings.exampleSecretId }}
   DB_NAME: {{ .Values.appSettings.db.dbname }}
   DB_HOSTNAME: {{ .Values.appSettings.db.hostname }}
   DB_USERNAME: {{ .Values.appSettings.db.username }}
