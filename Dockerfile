@@ -1,7 +1,9 @@
-FROM openjdk:11.0.8-jre
+FROM amazoncorretto:11-al2023
 
 ARG jar_path
 ENV JAR=$jar_path
+
+RUN yum update && yum install -y jemalloc
 
 # datadog
 RUN mkdir -p /app /opt/datadog
