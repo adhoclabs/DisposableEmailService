@@ -8,6 +8,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
     service.beta.kubernetes.io/aws-load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=adhoclabs-http-logs,access_logs.s3.prefix={{ .Values.cluster.namespace }}-burner/TEMPLATE_SVC_BASE-service
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
   name: TEMPLATE_SVC_BASE-service
   namespace: {{ .Values.cluster.namespace }}
 spec:
