@@ -1,6 +1,7 @@
 package co.adhoclabs.template.models
 
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
+import zio.schema.{DeriveSchema, Schema, TypeId}
 
 object Genre extends Enumeration with DefaultJsonProtocol {
   val NoGenre = Value
@@ -10,6 +11,14 @@ object Genre extends Enumeration with DefaultJsonProtocol {
   val Pop = Value
 
   type Genre = Value
+
+  implicit val hostedMediaTypeSchema: Schema[Genre] =
+    Schema.CaseClass1[String, Genre](
+      TypeId.parse("co.adhoclabs.template.models.Genre"),
+      field0            =
+        Schema.Field[Genre, String]("name", Schema.primitive[String], get0 = _ => "Name", set0 = (_, v) => Genre.Rock),
+      defaultConstruct0 = (name) => Genre.withName(name)
+    )
 
   // Manually defining the RootJsonFormat for this enum because since this isn't a case class, it doesn't have a
   // default json format

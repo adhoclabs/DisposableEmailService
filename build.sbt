@@ -9,6 +9,9 @@ scalaVersion := "2.12.12"
 val akkaVersion = "2.6.16"
 val akkaHttpVersion = "10.2.6"
 
+resolvers +=
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
 libraryDependencies ++= Seq(
   // External dependencies
   "ch.qos.logback"      %  "logback-classic"      % "1.2.3",
@@ -31,7 +34,11 @@ libraryDependencies ++= Seq(
   "org.scalatest"     %% "scalatest"           % "3.2.16"        % Test,
   "org.scalamock"     %% "scalamock"           % "5.2.0"         % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion     % Test,
-  "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test
+  "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test,
+
+  // ZIO-HTTP (Let's get away from akka!)
+  "dev.zio" %% "zio-http" % "3.0.0-RC4+48-db5d4db3-SNAPSHOT",
+  "dev.zio" %% "zio-schema"          % "0.4.15",
 )
 
 // Scalariform preferences, described here: https://github.com/scala-ide/scalariform

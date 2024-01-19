@@ -6,6 +6,7 @@ import spray.json.RootJsonFormat
 
 import java.time.Instant
 import java.util.UUID
+import zio.schema.{DeriveSchema, Schema}
 
 case class Album(
   id:        UUID,
@@ -18,6 +19,7 @@ case class Album(
 
 object Album extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[Album] = jsonFormat6(Album.apply)
+  implicit val schema: Schema[Album] = DeriveSchema.gen
 }
 
 case class AlbumWithSongs(
