@@ -29,6 +29,7 @@ case class AlbumWithSongs(
 
 object AlbumWithSongs extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[AlbumWithSongs] = jsonFormat2(AlbumWithSongs.apply)
+  implicit val schema: Schema[AlbumWithSongs] = DeriveSchema.gen
 }
 
 case class CreateAlbumRequest(
@@ -40,6 +41,7 @@ case class CreateAlbumRequest(
 
 object CreateAlbumRequest extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[CreateAlbumRequest] = jsonFormat4(CreateAlbumRequest.apply)
+  implicit val schema: Schema[CreateAlbumRequest] = DeriveSchema.gen
 }
 
 case class PatchAlbumRequest(
@@ -50,4 +52,5 @@ case class PatchAlbumRequest(
 
 object PatchAlbumRequest extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[PatchAlbumRequest] = jsonFormat3(PatchAlbumRequest.apply)
+  implicit val schema: Schema[PatchAlbumRequest] = DeriveSchema.gen
 }

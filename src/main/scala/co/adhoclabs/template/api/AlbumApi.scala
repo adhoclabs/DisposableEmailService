@@ -5,15 +5,85 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import co.adhoclabs.model.EmptyResponse
+import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 import co.adhoclabs.template.business.AlbumManager
-import co.adhoclabs.template.models.{CreateAlbumRequest, PatchAlbumRequest}
+import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest}
 import org.slf4j.{Logger, LoggerFactory}
+import zio.schema.{DeriveSchema, Schema}
 
 import scala.concurrent.ExecutionContext
 
 trait AlbumApi extends ApiBase {
   val routes: Route
+}
+
+import zio._
+import zio.http._
+import zio.http.codec.PathCodec
+import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
+import zio.http.endpoint.Endpoint
+
+object AlbumEndpoints {
+  val submit =
+    Endpoint(Method.POST / "albums")
+      .in[CreateAlbumRequest]
+      .out[AlbumWithSongs]
+
+  val get =
+    // TODO Return 404 when album with id not found
+    Endpoint(Method.GET / "albums" / uuid("albumId"))
+      .out[AlbumWithSongs](Status.Created)
+      .outError[ErrorResponse](Status.NotFound)
+
+  val patch =
+    // TODO Return 404 when album with id not found?
+    Endpoint(Method.PATCH / "albums" / uuid("albumId"))
+      .in[PatchAlbumRequest]
+      .out[Album] // TODO Why not AlbumWithSongs here?
+
+  val delete =
+    // TODO Return 404 when album with id not found?
+    Endpoint(Method.DELETE / "albums" / uuid("albumId"))
+      .out[EmptyResponse] // TODO Why not AlbumWithSongs here?
+
+  // TODO better spot for this. Ideally it would live in the upstream lib
+  implicit val schema: Schema[EmptyResponse] = DeriveSchema.gen
+  implicit val errorResponseSchema: Schema[ErrorResponse] = DeriveSchema.gen
+
+  val openAPI =
+    OpenAPIGen.fromEndpoints(
+      title   = "Burner",
+      version = "1.0",
+      submit,
+    )
+}
+
+case class AlbumRoutes(implicit albumManager: AlbumManager) {
+  val submit = AlbumEndpoints.submit.implement {
+    Handler.fromFunctionZIO {
+      case (createAlbumRequest: CreateAlbumRequest) =>
+        ZIO.fromFuture(
+          implicit ec =>
+            albumManager.create(createAlbumRequest)
+        ).orDie
+
+    }
+  }
+
+  val get = AlbumEndpoints.get.implement {
+    Handler.fromFunctionZIO {
+      (albumId: UUID) =>
+        ZIO.fromFuture(
+          implicit ec =>
+            albumManager.getWithSongs(albumId)
+        ).orDie
+          .someOrFail("Could not find album!")
+    }.mapError(ex => ErrorResponse(ex))
+  }
+
+  val routes = Routes(
+    submit
+  )
 }
 
 class AlbumApiImpl(implicit albumManager: AlbumManager, executionContext: ExecutionContext) extends AlbumApi {

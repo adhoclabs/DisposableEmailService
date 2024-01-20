@@ -11,6 +11,7 @@ import akka.util.ByteString
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
+import zio.http.endpoint.openapi.SwaggerUI
 import zio.{Unsafe, ZIO}
 import zio.http.{Body, Header, Headers, Method, Request, URL}
 
@@ -34,7 +35,14 @@ class ApiImpl(
   val songApi: SongApi = new SongApiImpl
   val albumApi: AlbumApi = new AlbumApiImpl
 
-  private def passUnhandledRequestsOverToZioHttp(req: RequestContext): Future[RouteResult] =
+  val docsRoute =
+    SwaggerUI.routes("docs", AlbumEndpoints.openAPI)
+
+  val zioRoutes = (docsRoute ++ HealthRoute.routes)
+
+  private def passUnhandledRequestsOverToZioHttp(req: RequestContext): Future[RouteResult] = {
+
+    val runtime = zio.Runtime.default
     for {
       zioRequest <- {
         println("\nUnrecognized akka request: " + req.request + "\n")
@@ -43,16 +51,20 @@ class ApiImpl(
       response <- {
         println("\nconverted zio     request: " + zioRequest + "\n")
 
-        val routeZio = HealthRoute.routes.apply(zioRequest)
-        val runtime = zio.Runtime.default
+        val routeZio = zioRoutes.apply(zioRequest)
         Unsafe.unsafe { implicit unsafe =>
           runtime.unsafe.runToFuture(routeZio.mapError(errorResponse => throw new Exception(errorResponse.body.toString)))
         }
         //        Future.successful()
       }
+      body <- Unsafe.unsafe { implicit unsafe =>
+        runtime.unsafe.runToFuture(response.body.asString.orDie)
+      }
+
     } yield {
-      RouteResult.Complete(HttpResponse.apply(StatusCodes.OK, entity = response.body.toString))
+      RouteResult.Complete(HttpResponse.apply(StatusCodes.OK, entity = body))
     }
+  }
 
   override val routes: Route = {
     concat(
@@ -155,3 +167,4 @@ class ApiImpl(
         complete(StatusCodes.InternalServerError -> exception.getMessage)
     }
 }
+

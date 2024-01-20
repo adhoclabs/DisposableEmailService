@@ -10,11 +10,11 @@ import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
 import com.typesafe.config.{Config, ConfigFactory}
+import zio.ZIOAppDefault
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
-
 object Main extends App {
 
   implicit val system: ActorSystem = Dependencies.actorSystem
