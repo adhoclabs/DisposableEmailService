@@ -40,6 +40,7 @@ object AlbumEndpoints {
     Endpoint(Method.PATCH / "albums" / uuid("albumId"))
       .in[PatchAlbumRequest]
       .out[Album] // TODO Why not AlbumWithSongs here?
+      .outError[ErrorResponse](Status.NotFound)
 
   val delete =
     // TODO Return 404 when album with id not found?
@@ -55,6 +56,9 @@ object AlbumEndpoints {
       title   = "Burner",
       version = "1.0",
       submit,
+    //      get,
+    //      patch,
+    //      delete
     )
 }
 
@@ -81,8 +85,33 @@ case class AlbumRoutes(implicit albumManager: AlbumManager) {
     }.mapError(ex => ErrorResponse(ex))
   }
 
+  val patch = AlbumEndpoints.patch.implement {
+    Handler.fromFunctionZIO {
+      case (albumId: UUID, patchAlbumRequest: PatchAlbumRequest) =>
+        ZIO.fromFuture(
+          implicit ec =>
+            albumManager.patch(albumId, patchAlbumRequest)
+        ).orDie
+          .someOrFail(ErrorResponse("Could not find album!"))
+    }
+  }
+
+  val delete = AlbumEndpoints.delete.implement {
+    Handler.fromFunctionZIO {
+      (albumId: UUID) =>
+        ZIO.fromFuture(
+          implicit ec =>
+            albumManager.delete(albumId)
+        ).orDie
+          .as(EmptyResponse())
+    }
+  }
+
   val routes = Routes(
-    submit
+    submit,
+    get,
+    patch,
+    delete
   )
 }
 
