@@ -63,9 +63,29 @@ object AlbumEndpoints {
 }
 
 case class AlbumRoutes(implicit albumManager: AlbumManager) {
+  /*
+    Example payload:
+    {
+      "title": "SuperAlbum",
+      "artists": [
+        "Muse",
+        "Robyn",
+        "TaylorSwift"
+      ],
+      "genre": {
+        "name": "Rock"
+      },
+      "songs": [
+        "KnightsOfCydonia",
+        "Starlight",
+        "Delicate",
+        "WithMyFriends"
+      ]
+    }
+   */
   val submit = AlbumEndpoints.submit.implement {
     Handler.fromFunctionZIO {
-      case (createAlbumRequest: CreateAlbumRequest) =>
+      (createAlbumRequest: CreateAlbumRequest) =>
         ZIO.fromFuture(
           implicit ec =>
             albumManager.create(createAlbumRequest)

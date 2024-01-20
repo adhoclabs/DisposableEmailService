@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onSuccess}
 import akka.http.scaladsl.server.Route
 import org.slf4j.Logger
+import zio.http.{Response, Routes}
 
 import scala.concurrent.Future
 

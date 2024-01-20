@@ -5,17 +5,25 @@ import akka.http.scaladsl.Http
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
-import co.adhoclabs.template.api.{Api, ApiImpl}
+import co.adhoclabs.template.api.{Api, ApiImpl, ApiZ}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
 import com.typesafe.config.{Config, ConfigFactory}
-import zio.ZIOAppDefault
+import zio.{ZIO, ZIOAppDefault}
+import zio.http.Server
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
-object Main extends App {
+
+object MainZio extends ZIOAppDefault {
+  def run = {
+    ZIO.debug("Starting") *>
+      Server.serve(ApiZ.zioRoutes.toHttpApp).provide(Server.default)
+  }
+}
+object Main {
 
   implicit val system: ActorSystem = Dependencies.actorSystem
   implicit val executor: ExecutionContext = Dependencies.executionContext
@@ -79,6 +87,7 @@ object Dependencies {
 
   // api
   val api: Api = new ApiImpl
+
 }
 
 object Configuration {

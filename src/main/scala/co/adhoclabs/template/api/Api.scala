@@ -18,6 +18,17 @@ import zio.http.{Body, Header, Headers, Method, Request, URL}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
+object ApiZ {
+  import co.adhoclabs.template.Dependencies._
+
+  val albumApiZ = AlbumRoutes()
+
+  val docsRoute =
+    SwaggerUI.routes("docs", AlbumEndpoints.openAPI)
+
+  val zioRoutes = (docsRoute ++ HealthRoute.routes ++ albumApiZ.routes)
+
+}
 trait Api extends ApiBase
 
 class ApiImpl(
@@ -35,11 +46,6 @@ class ApiImpl(
   val songApi: SongApi = new SongApiImpl
   val albumApi: AlbumApi = new AlbumApiImpl
 
-  val docsRoute =
-    SwaggerUI.routes("docs", AlbumEndpoints.openAPI)
-
-  val zioRoutes = (docsRoute ++ HealthRoute.routes)
-
   private def passUnhandledRequestsOverToZioHttp(req: RequestContext): Future[RouteResult] = {
 
     val runtime = zio.Runtime.default
@@ -51,7 +57,7 @@ class ApiImpl(
       response <- {
         println("\nconverted zio     request: " + zioRequest + "\n")
 
-        val routeZio = zioRoutes.apply(zioRequest)
+        val routeZio = ApiZ.zioRoutes.apply(zioRequest)
         Unsafe.unsafe { implicit unsafe =>
           runtime.unsafe.runToFuture(routeZio.mapError(errorResponse => throw new Exception(errorResponse.body.toString)))
         }
