@@ -1,6 +1,7 @@
 package co.adhoclabs.template.apiz
 
 import akka.actor.ActorSystem
+import akka.event.Logging.LogLevel
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse, StatusCodes, UniversalEntity}
 import akka.http.scaladsl.server.Directives._
@@ -9,13 +10,12 @@ import akka.http.scaladsl.server.directives.LoggingMagnet
 import akka.http.scaladsl.server.{ExceptionHandler, Rejection, RequestContext, Route, RouteResult}
 import akka.util.ByteString
 import co.adhoclabs.template.api.{AlbumApi, AlbumApiImpl, ApiBase, HealthApi, HealthApiImpl, SongApi, SongApiImpl}
-import co.adhoclabs.template.apiz.{AlbumEndpoints, AlbumRoutes, SongApiEndpoints, SongRoutes}
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
-import zio.{Unsafe, ZIO}
-import zio.http.{Body, Header, Headers, Method, Request, Response, Status, URL}
+import zio.{Unsafe, ZIO, http}
+import zio.http.{Body, Header, Headers, Method, Middleware, Request, Response, Status, URL}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -34,7 +34,13 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
     .handleErrorCause { cause =>
       println("eh? defects galore?")
       Response(Status.Forbidden, body = Body.fromString(cause.prettyPrint))
-    }
+    } @@ Middleware.requestLogging(statusCode => zio.LogLevel.Warning) @@ Middleware.debug
+  //  @@ Middleware.intercept {
+  //      (request, response) =>
+  //        println("Should log stuffz")
+  //        response
+  //
+  //    }
 
 }
 trait Api extends ApiBase
