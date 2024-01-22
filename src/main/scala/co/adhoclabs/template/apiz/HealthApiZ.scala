@@ -31,7 +31,7 @@ case class HealthRoutes(implicit healthManager: HealthManager) {
   val api =
     HealthEndpoint.api.implement {
       Handler.fromZIO {
-        ZIO.succeed("You're so healthy!")
+        ZIO.succeed("API is healthy!")
       }
     }
 

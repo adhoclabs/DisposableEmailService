@@ -5,9 +5,16 @@ import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
+import co.adhoclabs.template.MainZio
+import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthEndpoint, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest}
 import spray.json._
+import zio.{Scope, ZLayer}
+import zio.http.Header.Authorization
+import zio.http.Server.Config
+import zio.http.{Client, Driver, Request, TestServer, URL}
+import zio.http.endpoint.{EndpointExecutor, EndpointLocator}
 
 import scala.concurrent.Future
 
@@ -27,6 +34,44 @@ class AlbumApiTest extends ApiTestBase {
       (albumManager.getWithSongs _)
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
+
+      import zio.{Unsafe, ZIO, http}
+      import zio.{Unsafe, ZIO, http}
+
+      implicit val albumbRoutes = AlbumRoutes()
+      implicit val songRoutes = SongRoutes()
+      implicit val healthRoutes = HealthRoutes()
+
+      val zioRoutes = ApiZ().zioRoutes
+      val app = zioRoutes.toHttpApp
+
+      val locator =
+        EndpointLocator.fromURL(URL.decode("http://localhost:8080").toOption.get)
+
+      val runtime = zio.Runtime.default
+      val zioRes =
+        Unsafe.unsafe { implicit unsafe =>
+          runtime.unsafe.run {
+            (for {
+              client <- ZIO.service[Client]
+              _ <- {
+                TestServer.addRoutes(zioRoutes)
+              }
+              res <- {
+                val executor: EndpointExecutor[Unit] =
+                  EndpointExecutor(client, locator, ZIO.succeed(()))
+
+                executor(HealthEndpoint.api())
+                //                              MainZio.app()
+
+              }
+            } yield {
+              res
+            }).provide(Client.default, Scope.default, TestServer.layer, Driver.default, ZLayer.succeed(Config.default))
+          }
+        }
+
+      println("zioRes: " + zioRes)
 
       Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
         assert(status == StatusCodes.OK)

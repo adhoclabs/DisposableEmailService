@@ -24,9 +24,11 @@ object MainZio extends ZIOAppDefault {
   implicit val songRoutes = SongRoutes()
   implicit val healthRoutes = HealthRoutes()
 
+  val app = ApiZ().zioRoutes.toHttpApp
+
   def run = {
     ZIO.debug("Starting") *>
-      Server.serve(ApiZ().zioRoutes.toHttpApp).provide(Server.default)
+      Server.serve(app).provide(Server.default)
   }
 }
 object Main {
