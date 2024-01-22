@@ -5,7 +5,8 @@ import akka.http.scaladsl.Http
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
-import co.adhoclabs.template.api.{Api, ApiImpl, ApiZ}
+import co.adhoclabs.template.api.{Api, ApiImpl}
+import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
@@ -18,9 +19,14 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 object MainZio extends ZIOAppDefault {
+  import Dependencies._
+  implicit val albumbRoutes = AlbumRoutes()
+  implicit val songRoutes = SongRoutes()
+  implicit val healthRoutes = HealthRoutes()
+
   def run = {
     ZIO.debug("Starting") *>
-      Server.serve(ApiZ.zioRoutes.toHttpApp).provide(Server.default)
+      Server.serve(ApiZ().zioRoutes.toHttpApp).provide(Server.default)
   }
 }
 object Main {

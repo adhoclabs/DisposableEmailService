@@ -21,11 +21,6 @@ object Song extends BaseJsonProtocol {
   implicit val schema: Schema[Song] = DeriveSchema.gen
 }
 
-case class BasicPayload(id: String)
-object BasicPayload {
-  implicit val schema: Schema[BasicPayload] = DeriveSchema.gen
-}
-
 /*
 // While we ultimately felt that the apply method didn't add enough value, especially
 // after adding date fields, we're leaving this example in case someone in the future
