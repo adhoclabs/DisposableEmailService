@@ -12,11 +12,12 @@ object Genre extends Enumeration with DefaultJsonProtocol {
 
   type Genre = Value
 
-  implicit val hostedMediaTypeSchema: Schema[Genre] =
+  // TODO Better errors when this isn't matched?
+  implicit val genreSchema: Schema[Genre] =
     Schema.CaseClass1[String, Genre](
       TypeId.parse("co.adhoclabs.template.models.Genre"),
       field0            =
-        Schema.Field[Genre, String]("name", Schema.primitive[String], get0 = _ => "Name", set0 = (_, v) => Genre.Rock),
+        Schema.Field[Genre, String]("name", Schema.primitive[String], get0 = _.toString, set0 = (_, v) => Genre.withName(v)),
       defaultConstruct0 = (name) => Genre.withName(name)
     )
 

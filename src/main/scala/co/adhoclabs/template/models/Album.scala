@@ -3,18 +3,19 @@ package co.adhoclabs.template.models
 import co.adhoclabs.model.BaseJsonProtocol
 import co.adhoclabs.template.models.Genre._
 import spray.json.RootJsonFormat
+import zio.schema.annotation.description
 
 import java.time.Instant
 import java.util.UUID
 import zio.schema.{DeriveSchema, Schema}
 
 case class Album(
-  id:        UUID,
-  title:     String,
-  artists:   List[String],
-  genre:     Genre        = NoGenre,
-  createdAt: Instant,
-  updatedAt: Instant
+  id:                                                                        UUID,
+  title:                                                                     String,
+  @description("All Of the Artists that contributed to the album.") artists: List[String],
+  genre:                                                                     Genre        = NoGenre,
+  createdAt:                                                                 Instant,
+  updatedAt:                                                                 Instant
 )
 
 object Album extends BaseJsonProtocol {
