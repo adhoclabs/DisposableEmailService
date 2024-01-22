@@ -11,7 +11,7 @@ import akka.util.ByteString
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
-import zio.http.endpoint.openapi.SwaggerUI
+import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 import zio.{Unsafe, ZIO}
 import zio.http.{Body, Header, Headers, Method, Request, URL}
 
@@ -22,11 +22,18 @@ object ApiZ {
   import co.adhoclabs.template.Dependencies._
 
   val albumApiZ = AlbumRoutes()
+  val songRoutes = SongRoutes()
+
+  val openApi = OpenAPIGen.fromEndpoints(
+    title   = "BurnerAlbums",
+    version = "1.0",
+    SongApiEndpoints.endpoints ++ AlbumEndpoints.endpoints
+  )
 
   val docsRoute =
-    SwaggerUI.routes("docs", AlbumEndpoints.openAPI)
+    SwaggerUI.routes("docs", openApi)
 
-  val zioRoutes = (docsRoute ++ HealthRoute.routes ++ albumApiZ.routes)
+  val zioRoutes = (docsRoute ++ HealthRoute.routes ++ albumApiZ.routes ++ songRoutes.routes)
 
 }
 trait Api extends ApiBase

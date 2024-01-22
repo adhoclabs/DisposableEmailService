@@ -54,4 +54,5 @@ case class CreateSongRequest(
 
 object CreateSongRequest extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[CreateSongRequest] = jsonFormat3(CreateSongRequest.apply)
+  implicit val schema: Schema[CreateSongRequest] = DeriveSchema.gen
 }

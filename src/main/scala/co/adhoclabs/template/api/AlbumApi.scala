@@ -84,8 +84,16 @@ object AlbumEndpoints {
 
   val openAPI =
     OpenAPIGen.fromEndpoints(
-      title   = "Burner",
+      title   = "BurnerAlbums",
       version = "1.0",
+      submit,
+      get,
+      patch,
+      delete
+    )
+
+  val endpoints =
+    List(
       submit,
       get,
       patch,
