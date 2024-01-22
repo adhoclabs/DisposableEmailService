@@ -11,8 +11,10 @@ import co.adhoclabs.template.api.ApiBase
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
+import zio.http.endpoint.Endpoint
+import zio.{Cause, ZIO}
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
-import zio.http.{Body, Middleware, Response, Status}
+import zio.http.{Body, Handler, Middleware, Response, Route, RoutePattern, Routes, Status}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -27,11 +29,57 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
   val docsRoute =
     SwaggerUI.routes("docs", openApi)
 
-  val zioRoutes = (docsRoute ++ healthRoute.routes ++ albumApiZ.routes ++ songRoutes.routes ++ FallbackRoute.routes)
+  val unhandled =
+    Routes(
+      Endpoint(RoutePattern.any)
+        .out[String]
+        .implement(
+          Handler.fromFunctionZIO(
+            _ =>
+              ZIO.debug("Unhandled.").as("Unhandled")
+          )
+        )
+    //      Route.route(RoutePattern.any).apply(Handler.fromZIO(ZIO.debug("Unhandled.").as(Response.text("Unhandled"))))
+    )
+
+  // TODO Where should this live?
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  val zioRoutes = (docsRoute ++ healthRoute.routes ++ albumApiZ.routes ++ songRoutes.routes ++ unhandled)
+    .mapErrorZIO { error =>
+      println("error: " + error)
+      ZIO.fail(error)
+    }
     //    .handleErrorRequest()
     .handleErrorCause { cause =>
-      Response(Status.Forbidden, body = Body.fromString(cause.prettyPrint))
-    } @@ Middleware.requestLogging(statusCode => zio.LogLevel.Warning) @@ Middleware.debug
+      println("In handleErrorCause")
+      cause match {
+        case Cause.Fail(value, trace) =>
+          println("fail")
+          Response(Status.InternalServerError, body = Body.fromString("Shouldn't be possible, right? TODO Confirm. Error: " + value))
+        case Cause.Die(value, trace) =>
+          value match {
+            case validationException: ValidationException => ???
+            case unexpectedException: UnexpectedException => ???
+            case exception: Exception =>
+              logger.error("", exception)
+              println("", exception)
+              ???
+            case rawThrowable => ???
+          }
+        case interrupt: Cause.Interrupt =>
+          Response(Status.InternalServerError, body = Body.fromString("Process Interrupted. " + interrupt))
+        case other =>
+          println("Other: " + other)
+          Response(Status.Forbidden, body = Body.fromString(other.prettyPrint))
+
+      }
+      //      Response(Status.Forbidden, body = Body.fromString(cause.prettyPrint))
+    }
+    .mapErrorZIO(errResponse =>
+      ZIO.debug("ErrorResponse: " + errResponse).as(errResponse)) @@
+    //    Middleware.requestLogging(statusCode => zio.LogLevel.Warning) @@
+    Middleware.debug
   //  @@ Middleware.intercept {
   //      (request, response) =>
   //        println("Should log stuffz")
