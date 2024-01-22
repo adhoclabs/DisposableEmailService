@@ -37,7 +37,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test,
 
   // ZIO-HTTP (Let's get away from akka!)
-  "dev.zio" %% "zio-http" % "3.0.0-RC4+48-db5d4db3-SNAPSHOT",
+  "dev.zio" %% "zio-http" % "3.0.0-RC4+56-5c9b8c71-SNAPSHOT",
   "dev.zio" %% "zio-schema"          % "0.4.15",
 )
 
