@@ -141,8 +141,8 @@ class AlbumApiTest extends ApiTestBase {
 
       provokeServerFailure(
         app,
-        Request.post(s"albums", body = Body.from(createAlbumRequest)),
-        expectedStatus = Status.InternalServerError,
+        Request.post(s"albums", body = Body.from(createAlbumRequestNoSongs)),
+        expectedStatus = Status.BadRequest,
       //        error => error.error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs."
       )
 
