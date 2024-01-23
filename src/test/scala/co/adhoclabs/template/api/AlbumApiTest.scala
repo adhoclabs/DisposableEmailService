@@ -34,81 +34,6 @@ class AlbumApiTest extends ApiTestBase {
     songs   = expectedAlbumWithSongs.songs.map(_.title)
   )
 
-  implicit val albumbRoutes = AlbumRoutes()
-  implicit val songRoutes = SongRoutes()
-  implicit val healthRoutes = HealthRoutes()
-
-  val zioRoutes = ApiZ().zioRoutes
-  val app = zioRoutes.toHttpApp
-
-  def provokeServerFailure(request: Request, expectedStatus: Status, errorAssertion: ErrorResponse => Boolean = _ => true): (Status, ErrorResponse) = {
-    import Schemas.errorResponseSchema
-
-    val (status, errorResponse) =
-      invokeZioRequest[ErrorResponse](request)
-        .left
-        .getOrElse(throw new Exception("Broken failure test!"))
-
-    assert(status == expectedStatus)
-    assert(errorAssertion(errorResponse))
-    (status, errorResponse)
-  }
-
-  def provokeServerSuccess[T: Schema](request: Request): (Status, T) = {
-    invokeZioRequest(request).right.getOrElse(throw new Exception("Broken successful test!"))
-  }
-
-  def invokeZioRequest[T: Schema](request: Request): Either[(Status, ErrorResponse), (Status, T)] = {
-    import Schemas.errorResponseSchema
-    val runtime = zio.Runtime.default
-    import zio.schema._
-    //    import zio.schema.derivation._
-    import zio.json._
-    import spray.json._
-    import DefaultJsonProtocol._
-    Unsafe.unsafe { implicit unsafe =>
-      runtime.unsafe.run {
-        (for {
-          response <- app.apply(request)
-          _ <- ZIO.when(response.status.isError)(
-            for {
-              errorResponse <- response.body.to[ErrorResponse]
-            } yield ZIO.fail((response.status, errorResponse))
-          )
-          res <- response.body.to[T]
-        } yield (response.status, res))
-          .mapError {
-            case (errorStatus: Status, er: ErrorResponse) => (errorStatus, er)
-            case other                                    => (Status.InternalServerError, ErrorResponse(other.toString))
-          }
-      }
-    } match {
-      case Exit.Success((status, value)) =>
-        value match {
-          case er: ErrorResponse =>
-            Left((status, er))
-          case other =>
-            Right((status, value))
-        }
-      case Exit.Failure(cause) =>
-        cause match {
-          case Cause.Empty => ???
-          case Cause.Fail(value, trace) =>
-            Left(value)
-          case Cause.Die(value, trace) =>
-            ???
-          case Cause.Interrupt(fiberId, trace)   => ???
-          case Cause.Stackless(cause, stackless) => ???
-          case Cause.Then(left, right)           => ???
-          case Cause.Both(left, right)           => ???
-        }
-
-      //        Left(cause.failureOrCause.left.get)
-      //        Left(cause.failureOption.get)
-
-    }
-  }
-
   describe("GET /albums/:id") {
     it("should call AlbumManager.get and return a 200 with an album with songs body when album exists") {
       (albumManager.getWithSongs _)
@@ -116,7 +41,7 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
       val (statusCode, body) =
-        provokeServerSuccess[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+        provokeServerSuccess[AlbumWithSongs](app, Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
 
       assert(statusCode == Status.Created)
       assert(body == expectedAlbumWithSongs)
@@ -129,6 +54,7 @@ class AlbumApiTest extends ApiTestBase {
 
       val (status, errorResponse) =
         provokeServerFailure(
+          app,
           Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
           expectedStatus = Status.NotFound
         )
@@ -149,7 +75,7 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
 
       val (statusCode, body: Album) =
-        provokeServerSuccess[Album](Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
+        provokeServerSuccess[Album](app, Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
 
       assert(statusCode == Status.Ok)
       assert(body == expectedAlbumWithSongs.album)
@@ -162,6 +88,7 @@ class AlbumApiTest extends ApiTestBase {
 
       val (statusCode, _) =
         provokeServerFailure(
+          app,
           Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
           expectedStatus = Status.NotFound
 
@@ -178,7 +105,7 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(expectedAlbumWithSongs))
 
       val (statusCode, body: AlbumWithSongs) =
-        provokeServerSuccess[AlbumWithSongs](Request.post(s"/albums", body = Body.from(createAlbumRequest)))
+        provokeServerSuccess[AlbumWithSongs](app, Request.post(s"/albums", body = Body.from(createAlbumRequest)))
 
       assert(statusCode == Status.Created)
       assert(body == expectedAlbumWithSongs)
@@ -191,6 +118,7 @@ class AlbumApiTest extends ApiTestBase {
 
       val (statusCode, error) =
         provokeServerFailure(
+          app,
           Request.post(s"albums", body = Body.from(createAlbumRequest)),
           expectedStatus = Status.InternalServerError
         )
