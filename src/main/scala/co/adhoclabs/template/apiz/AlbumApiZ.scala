@@ -14,7 +14,7 @@ import zio.http.codec.PathCodec
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 import zio.http.endpoint.Endpoint
 import Schemas._
-import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, ValidationException}
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException, ValidationException}
 
 object AlbumEndpoints {
   val submit =
@@ -22,7 +22,8 @@ object AlbumEndpoints {
       .in[CreateAlbumRequest]
       .out[AlbumWithSongs](Status.Created)
       //      .outError[Throwable](Status.BadRequest)
-      //      .outError[ErrorResponse](Status.InternalServerError)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
       .examplesIn(
         "simple" ->
           CreateAlbumRequest(
@@ -103,7 +104,22 @@ case class AlbumRoutes(implicit albumManager: AlbumManager) {
           futureRes <- ZIO.fromFuture(
             implicit ec =>
               albumManager.create(createAlbumRequest)
-          ).orDie
+          ).mapError(ex =>
+
+              ex match {
+                case conflict: AlbumAlreadyExistsException =>
+                  println("Right")
+                  Right(BadRequestResponse(conflict.errorResponse))
+
+                case ex: NoSongsInAlbumException =>
+                  println("Right")
+                  Right(BadRequestResponse(ex.errorResponse))
+                case other =>
+                  println("Left")
+                  Left(InternalErrorResponse(ErrorResponse(other.getMessage)))
+              }
+            //            ErrorResponse(t.getMessage)
+            )
 
         } yield futureRes
       //          .mapError { ex =>
