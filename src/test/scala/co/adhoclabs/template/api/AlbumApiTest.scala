@@ -80,33 +80,6 @@ class AlbumApiTest extends ApiTestBase {
 
     }
   }
-  def invokeZioRequest[P, A, E, B, M <: EndpointMiddleware](invocation: Invocation[P, A, E, B, zio.http.endpoint.EndpointMiddleware.None]) = {
-
-    val locator =
-      EndpointLocator.fromURL(URL.decode("http://localhost:8080").toOption.get)
-
-    val runtime = zio.Runtime.default
-    Unsafe.unsafe { implicit unsafe =>
-      runtime.unsafe.run {
-        (for {
-          client <- ZIO.service[Client]
-          _ <- {
-            TestServer.addRoutes(zioRoutes)
-          }
-          res <- {
-            val executor: EndpointExecutor[Unit] =
-              EndpointExecutor(client, locator, ZIO.succeed(()))
-
-            executor(invocation)
-            //                              MainZio.app()
-
-          }
-        } yield {
-          res
-        }).provide(Client.default, Scope.default, TestServer.layer, Driver.default, ZLayer.succeed(Config.default))
-      }
-    }
-  }
 
   describe("GET /albums/:id") {
     it("should call AlbumManager.get and return a 200 with an album with songs body when album exists") {
@@ -140,13 +113,9 @@ class AlbumApiTest extends ApiTestBase {
           assert(statusCode == Status.Created)
           assert(body == expectedAlbumWithSongs)
         case Left(cause) =>
-          println("Left")
+          println("Left: " + cause)
           succeed
       }
-
-      //      Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
-      //        assert(status == StatusCodes.NotFound)
-      //      }
     }
   }
 
