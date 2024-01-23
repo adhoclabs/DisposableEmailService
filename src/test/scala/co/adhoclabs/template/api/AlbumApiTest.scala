@@ -40,34 +40,38 @@ class AlbumApiTest extends ApiTestBase {
   val zioRoutes = ApiZ().zioRoutes
   val app = zioRoutes.toHttpApp
 
-  def invokeZioRequest[T: Schema](request: Request): Either[ErrorResponse, (Status, T)] = {
+  def provokeServerFailure[T: Schema](request: Request): (Status, ErrorResponse) = {
+    invokeZioRequest(request).left.getOrElse(throw new Exception("Broken test!"))
+  }
+
+  def provokeServerSuccess[T: Schema](request: Request): (Status, T) = {
+    invokeZioRequest(request).right.getOrElse(throw new Exception("Broken test!"))
+  }
+
+  def invokeZioRequest[T: Schema](request: Request): Either[(Status, ErrorResponse), (Status, T)] = {
     val runtime = zio.Runtime.default
     Unsafe.unsafe { implicit unsafe =>
       runtime.unsafe.run {
         (for {
-          _ <- ZIO.debug("going to make request")
           response <- app.apply(request)
-          _ <- ZIO.when(response.status == Status.NotFound)(
-            ZIO.fail(ErrorResponse("Not found!"))
+          _ <- ZIO.when(response.status.isClientError)(
+            ZIO.fail((response.status, ErrorResponse("Not found!")))
           )
           res <- response.body.to[T]
         } yield (response.status, res))
           .mapError {
-            case er: ErrorResponse => er
-            case other             => ErrorResponse(other.toString)
+            case (errorStatus: Status, er: ErrorResponse) => (errorStatus, er)
+            case other                                    => (Status.InternalServerError, ErrorResponse(other.toString))
           }
       }
     } match {
       case Exit.Success(value) => Right(value)
       case Exit.Failure(cause) =>
-        println("Exit failure: " + cause)
         cause match {
           case Cause.Empty => ???
           case Cause.Fail(value, trace) =>
-            println("fail")
             Left(value)
           case Cause.Die(value, trace) =>
-            println("die")
             ???
           case Cause.Interrupt(fiberId, trace)   => ???
           case Cause.Stackless(cause, stackless) => ???
@@ -87,16 +91,11 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
-      val zioResSimple =
-        invokeZioRequest[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+      val (statusCode, body) =
+        provokeServerSuccess[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
 
-      zioResSimple match {
-        case Right((statusCode, body)) =>
-          assert(statusCode == Status.Created)
-          assert(body == expectedAlbumWithSongs)
-        case Left(cause) => ???
-      }
-
+      assert(statusCode == Status.Created)
+      assert(body == expectedAlbumWithSongs)
     }
 
     it("should call AlbumManager.get and return a 404 when album doesn't exist") {
@@ -104,18 +103,10 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(None))
 
-      val zioResSimple =
-        invokeZioRequest[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
-
-      zioResSimple match {
-        case Right((statusCode, body)) =>
-          println("Right")
-          assert(statusCode == Status.Created)
-          assert(body == expectedAlbumWithSongs)
-        case Left(cause) =>
-          println("Left: " + cause)
-          succeed
-      }
+      val (status, errorResponse) =
+        provokeServerFailure[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+      assert(status == Status.NotFound)
+      assert(errorResponse == ErrorResponse("Not found!"))
     }
   }
 
