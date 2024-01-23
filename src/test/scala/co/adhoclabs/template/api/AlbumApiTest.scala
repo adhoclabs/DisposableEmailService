@@ -13,7 +13,7 @@ import spray.json._
 import zio.{Cause, Exit, Scope, Unsafe, ZIO, ZLayer}
 import zio.http.Header.Authorization
 import zio.http.Server.Config
-import zio.http.{Client, Driver, Request, Status, TestServer, URL}
+import zio.http.{Body, Client, Driver, Request, Status, TestServer, URL}
 import zio.http.endpoint.{EndpointExecutor, EndpointLocator, EndpointMiddleware, Invocation}
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 import zio.schema.{DynamicValue, Schema}
@@ -122,12 +122,11 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id, patchRequest)
         .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
+      val (statusCode, body: Album) =
+        provokeServerSuccess[Album](Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
 
-      Patch(s"/albums/${expectedAlbumWithSongs.album.id}", requestEntity) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.OK)
-        assert(responseAs[Album] == expectedAlbumWithSongs.album)
-      }
+      assert(statusCode == Status.Ok)
+      assert(body == expectedAlbumWithSongs.album)
     }
 
     it("should call AlbumManager.update and return a 404 when album doesn't exist") {
@@ -135,11 +134,10 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id, patchRequest)
         .returning(Future.successful(None))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${expectedAlbumWithSongs.album.toJson}""")
+      val (statusCode, _) =
+        provokeServerFailure[Album](Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
 
-      Patch(s"/albums/${expectedAlbumWithSongs.album.id}", requestEntity) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.NotFound)
-      }
+      assert(statusCode == Status.NotFound)
     }
   }
 
