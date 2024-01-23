@@ -41,14 +41,17 @@ class AlbumApiTest extends ApiTestBase {
   val zioRoutes = ApiZ().zioRoutes
   val app = zioRoutes.toHttpApp
 
-  def provokeServerFailure(request: Request): (Status, ErrorResponse) = {
+  def provokeServerFailure(request: Request, expectedStatus: Status, errorAssertion: ErrorResponse => Boolean = _ => true): (Status, ErrorResponse) = {
     import Schemas.errorResponseSchema
-    val rez =
-      invokeZioRequest[ErrorResponse](request)
 
-    rez
-      .left
-      .getOrElse(throw new Exception("Broken failure test!"))
+    val (status, errorResponse) =
+      invokeZioRequest[ErrorResponse](request)
+        .left
+        .getOrElse(throw new Exception("Broken failure test!"))
+
+    assert(status == expectedStatus)
+    assert(errorAssertion(errorResponse))
+    (status, errorResponse)
   }
 
   def provokeServerSuccess[T: Schema](request: Request): (Status, T) = {
@@ -125,8 +128,10 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(None))
 
       val (status, errorResponse) =
-        provokeServerFailure(Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
-      assert(status == Status.NotFound)
+        provokeServerFailure(
+          Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
+          expectedStatus = Status.NotFound
+        )
       assert(errorResponse == ErrorResponse("Could not find album!"))
     }
   }
@@ -156,7 +161,11 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(None))
 
       val (statusCode, _) =
-        provokeServerFailure(Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
+        provokeServerFailure(
+          Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
+          expectedStatus = Status.NotFound
+
+        )
 
       assert(statusCode == Status.NotFound)
     }
@@ -181,7 +190,10 @@ class AlbumApiTest extends ApiTestBase {
         .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
 
       val (statusCode, error) =
-        provokeServerFailure(Request.post(s"albums", body = Body.from(createAlbumRequest)))
+        provokeServerFailure(
+          Request.post(s"albums", body = Body.from(createAlbumRequest)),
+          expectedStatus = Status.InternalServerError
+        )
 
       assert(statusCode == Status.InternalServerError)
     }
