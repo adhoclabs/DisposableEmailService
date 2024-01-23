@@ -56,7 +56,7 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
           println("fail status: " + value.status)
           //          value.
           value
-          value
+          value.copy(body = Body.from(ErrorResponse("Fail. " + value.body.toString)))
         //          Response(Status.InternalServerError, body = value.body)
         case Cause.Die(value, trace) =>
           value match {

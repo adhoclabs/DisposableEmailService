@@ -14,15 +14,15 @@ import zio.http.codec.PathCodec
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 import zio.http.endpoint.Endpoint
 import Schemas._
-import co.adhoclabs.template.exceptions.AlbumAlreadyExistsException
+import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, ValidationException}
 
 object AlbumEndpoints {
   val submit =
     Endpoint(Method.POST / "albums")
       .in[CreateAlbumRequest]
       .out[AlbumWithSongs](Status.Created)
-      .outError[ErrorResponse](Status.BadRequest)
-      .outError[ErrorResponse](Status.InternalServerError)
+      //      .outError[Throwable](Status.BadRequest)
+      //      .outError[ErrorResponse](Status.InternalServerError)
       .examplesIn(
         "simple" ->
           CreateAlbumRequest(
@@ -48,6 +48,7 @@ object AlbumEndpoints {
       .in[PatchAlbumRequest]
       .out[Album] // TODO Why not AlbumWithSongs here?
       .outError[ErrorResponse](Status.NotFound)
+      .outError[ErrorResponse](Status.BadRequest)
       .examplesIn(
         "Change Title and Artists" ->
           (
@@ -98,10 +99,13 @@ case class AlbumRoutes(implicit albumManager: AlbumManager) {
   val submit = AlbumEndpoints.submit.implement {
     Handler.fromFunctionZIO {
       (createAlbumRequest: CreateAlbumRequest) =>
-        ZIO.fromFuture(
-          implicit ec =>
-            albumManager.create(createAlbumRequest)
-        ).orDie
+        for {
+          futureRes <- ZIO.fromFuture(
+            implicit ec =>
+              albumManager.create(createAlbumRequest)
+          ).orDie
+
+        } yield futureRes
       //          .mapError { ex =>
       //            println("ex that needs a 500: " + ex)
       //            ex match {
@@ -119,8 +123,8 @@ case class AlbumRoutes(implicit albumManager: AlbumManager) {
           implicit ec =>
             albumManager.getWithSongs(albumId)
         ).orDie
-          .someOrFail("Could not find album!")
-    }.mapError(ex => ErrorResponse(ex))
+          .someOrFail(ErrorResponse("Could not find album!"))
+    } //.mapError(ex => ErrorResponse(ex))
   }
 
   val patch = AlbumEndpoints.patch.implement {

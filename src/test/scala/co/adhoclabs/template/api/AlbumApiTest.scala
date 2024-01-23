@@ -1,13 +1,8 @@
 package co.adhoclabs.template.api
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.ContentTypes.`application/json`
-import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest}
-import spray.json._
 import zio.http.{Body, Request, Status}
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 
@@ -33,8 +28,8 @@ class AlbumApiTest extends ApiTestBase {
       provokeServerSuccess[AlbumWithSongs](
         app,
         Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
-        Status.Created,
-        _ == expectedAlbumWithSongs
+        expectedStatus   = Status.Created,
+        payloadAssertion = _ == expectedAlbumWithSongs
       )
 
     }
@@ -48,7 +43,7 @@ class AlbumApiTest extends ApiTestBase {
         app,
         Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
         expectedStatus = Status.NotFound,
-        _ == ErrorResponse("Could not find album!")
+        errorAssertion = _ == ErrorResponse("Could not find album!")
       )
     }
   }
@@ -68,8 +63,8 @@ class AlbumApiTest extends ApiTestBase {
       provokeServerSuccess[Album](
         app,
         Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
-        Status.Ok,
-        _ == expectedAlbumWithSongs.album
+        expectedStatus   = Status.Ok,
+        payloadAssertion = _ == expectedAlbumWithSongs.album
       )
 
     }
@@ -120,13 +115,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .throwing(AlbumAlreadyExistsException("album already exists"))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+      //      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
 
       provokeServerFailure(
         app,
         Request.post(s"albums", body = Body.from(createAlbumRequest)),
         expectedStatus = Status.BadRequest,
-        _.error == s"album already exists"
+        errorAssertion = _.error == s"album already exists"
       )
 
       //      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
@@ -142,13 +137,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequestNoSongs)
         .throwing(NoSongsInAlbumException(createAlbumRequestNoSongs))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequestNoSongs.toJson}""")
+      //      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequestNoSongs.toJson}""")
 
       provokeServerFailure(
         app,
         Request.post(s"albums", body = Body.from(createAlbumRequest)),
         expectedStatus = Status.InternalServerError,
-        error => error.error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs."
+      //        error => error.error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs."
       )
 
       //      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
