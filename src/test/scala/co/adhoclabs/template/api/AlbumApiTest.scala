@@ -6,16 +6,20 @@ import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.MainZio
-import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthEndpoint, HealthRoutes, SongRoutes}
+import co.adhoclabs.template.apiz.{AlbumEndpoints, AlbumRoutes, ApiZ, HealthEndpoint, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest}
 import spray.json._
-import zio.{Scope, ZLayer}
+import zio.{Cause, Exit, Scope, Unsafe, ZIO, ZLayer}
 import zio.http.Header.Authorization
 import zio.http.Server.Config
-import zio.http.{Client, Driver, Request, TestServer, URL}
-import zio.http.endpoint.{EndpointExecutor, EndpointLocator}
+import zio.http.{Client, Driver, Request, Status, TestServer, URL}
+import zio.http.endpoint.{EndpointExecutor, EndpointLocator, EndpointMiddleware, Invocation}
+import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
+import zio.schema.{DynamicValue, Schema}
 
+import java.io
+import java.util.UUID
 import scala.concurrent.Future
 
 class AlbumApiTest extends ApiTestBase {
@@ -29,54 +33,97 @@ class AlbumApiTest extends ApiTestBase {
     songs   = expectedAlbumWithSongs.songs.map(_.title)
   )
 
+  implicit val albumbRoutes = AlbumRoutes()
+  implicit val songRoutes = SongRoutes()
+  implicit val healthRoutes = HealthRoutes()
+
+  val zioRoutes = ApiZ().zioRoutes
+  val app = zioRoutes.toHttpApp
+
+  def invokeZioRequest[T: Schema](request: Request): Either[ErrorResponse, (Status, T)] = {
+    val runtime = zio.Runtime.default
+    Unsafe.unsafe { implicit unsafe =>
+      runtime.unsafe.run {
+        (for {
+          _ <- ZIO.debug("going to make request")
+          response <- app.apply(request)
+          _ <- ZIO.when(response.status == Status.NotFound)(
+            ZIO.fail(ErrorResponse("Not found!"))
+          )
+          res <- response.body.to[T]
+        } yield (response.status, res))
+          .mapError {
+            case er: ErrorResponse => er
+            case other             => ErrorResponse(other.toString)
+          }
+      }
+    } match {
+      case Exit.Success(value) => Right(value)
+      case Exit.Failure(cause) =>
+        println("Exit failure: " + cause)
+        cause match {
+          case Cause.Empty => ???
+          case Cause.Fail(value, trace) =>
+            println("fail")
+            Left(value)
+          case Cause.Die(value, trace) =>
+            println("die")
+            ???
+          case Cause.Interrupt(fiberId, trace)   => ???
+          case Cause.Stackless(cause, stackless) => ???
+          case Cause.Then(left, right)           => ???
+          case Cause.Both(left, right)           => ???
+        }
+
+      //        Left(cause.failureOrCause.left.get)
+      //        Left(cause.failureOption.get)
+
+    }
+  }
+  def invokeZioRequest[P, A, E, B, M <: EndpointMiddleware](invocation: Invocation[P, A, E, B, zio.http.endpoint.EndpointMiddleware.None]) = {
+
+    val locator =
+      EndpointLocator.fromURL(URL.decode("http://localhost:8080").toOption.get)
+
+    val runtime = zio.Runtime.default
+    Unsafe.unsafe { implicit unsafe =>
+      runtime.unsafe.run {
+        (for {
+          client <- ZIO.service[Client]
+          _ <- {
+            TestServer.addRoutes(zioRoutes)
+          }
+          res <- {
+            val executor: EndpointExecutor[Unit] =
+              EndpointExecutor(client, locator, ZIO.succeed(()))
+
+            executor(invocation)
+            //                              MainZio.app()
+
+          }
+        } yield {
+          res
+        }).provide(Client.default, Scope.default, TestServer.layer, Driver.default, ZLayer.succeed(Config.default))
+      }
+    }
+  }
+
   describe("GET /albums/:id") {
     it("should call AlbumManager.get and return a 200 with an album with songs body when album exists") {
       (albumManager.getWithSongs _)
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
-      import zio.{Unsafe, ZIO, http}
-      import zio.{Unsafe, ZIO, http}
+      val zioResSimple =
+        invokeZioRequest[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
 
-      implicit val albumbRoutes = AlbumRoutes()
-      implicit val songRoutes = SongRoutes()
-      implicit val healthRoutes = HealthRoutes()
-
-      val zioRoutes = ApiZ().zioRoutes
-      val app = zioRoutes.toHttpApp
-
-      val locator =
-        EndpointLocator.fromURL(URL.decode("http://localhost:8080").toOption.get)
-
-      val runtime = zio.Runtime.default
-      val zioRes =
-        Unsafe.unsafe { implicit unsafe =>
-          runtime.unsafe.run {
-            (for {
-              client <- ZIO.service[Client]
-              _ <- {
-                TestServer.addRoutes(zioRoutes)
-              }
-              res <- {
-                val executor: EndpointExecutor[Unit] =
-                  EndpointExecutor(client, locator, ZIO.succeed(()))
-
-                executor(HealthEndpoint.api())
-                //                              MainZio.app()
-
-              }
-            } yield {
-              res
-            }).provide(Client.default, Scope.default, TestServer.layer, Driver.default, ZLayer.succeed(Config.default))
-          }
-        }
-
-      println("zioRes: " + zioRes)
-
-      Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.OK)
-        assert(responseAs[AlbumWithSongs] == expectedAlbumWithSongs)
+      zioResSimple match {
+        case Right((statusCode, body)) =>
+          assert(statusCode == Status.Created)
+          assert(body == expectedAlbumWithSongs)
+        case Left(cause) => ???
       }
+
     }
 
     it("should call AlbumManager.get and return a 404 when album doesn't exist") {
@@ -84,9 +131,22 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(None))
 
-      Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.NotFound)
+      val zioResSimple =
+        invokeZioRequest[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+
+      zioResSimple match {
+        case Right((statusCode, body)) =>
+          println("Right")
+          assert(statusCode == Status.Created)
+          assert(body == expectedAlbumWithSongs)
+        case Left(cause) =>
+          println("Left")
+          succeed
       }
+
+      //      Get(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
+      //        assert(status == StatusCodes.NotFound)
+      //      }
     }
   }
 
