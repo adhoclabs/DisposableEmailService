@@ -5,22 +5,12 @@ import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
-import co.adhoclabs.template.MainZio
-import co.adhoclabs.template.apiz.{AlbumEndpoints, AlbumRoutes, ApiZ, HealthEndpoint, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, AlbumNotCreatedException, NoSongsInAlbumException}
 import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, PatchAlbumRequest}
 import spray.json._
-import zio.{Cause, Exit, Scope, Unsafe, ZIO, ZLayer}
-import zio.http.Header.Authorization
-import zio.http.Server.Config
-import zio.http.{Body, Client, Driver, Request, Status, TestServer, URL}
-import zio.http.endpoint.{EndpointExecutor, EndpointLocator, EndpointMiddleware, Invocation}
+import zio.http.{Body, Request, Status}
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
-import zio.schema.{DynamicValue, Schema}
 
-import java.io
-import java.util.UUID
-//import Schemas._
 import scala.concurrent.Future
 
 class AlbumApiTest extends ApiTestBase {
@@ -40,11 +30,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(Some(expectedAlbumWithSongs)))
 
-      val (statusCode, body) =
-        provokeServerSuccess[AlbumWithSongs](app, Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+      provokeServerSuccess[AlbumWithSongs](
+        app,
+        Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
+        Status.Created,
+        _ == expectedAlbumWithSongs
+      )
 
-      assert(statusCode == Status.Created)
-      assert(body == expectedAlbumWithSongs)
     }
 
     it("should call AlbumManager.get and return a 404 when album doesn't exist") {
@@ -52,13 +44,12 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id)
         .returning(Future.successful(None))
 
-      val (status, errorResponse) =
-        provokeServerFailure(
-          app,
-          Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
-          expectedStatus = Status.NotFound
-        )
-      assert(errorResponse == ErrorResponse("Could not find album!"))
+      provokeServerFailure(
+        app,
+        Request.get(s"albums/${expectedAlbumWithSongs.album.id}"),
+        expectedStatus = Status.NotFound,
+        _ == ErrorResponse("Could not find album!")
+      )
     }
   }
 
@@ -74,11 +65,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id, patchRequest)
         .returning(Future.successful(Some(expectedAlbumWithSongs.album)))
 
-      val (statusCode, body: Album) =
-        provokeServerSuccess[Album](app, Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
+      provokeServerSuccess[Album](
+        app,
+        Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
+        Status.Ok,
+        _ == expectedAlbumWithSongs.album
+      )
 
-      assert(statusCode == Status.Ok)
-      assert(body == expectedAlbumWithSongs.album)
     }
 
     it("should call AlbumManager.update and return a 404 when album doesn't exist") {
@@ -86,15 +79,12 @@ class AlbumApiTest extends ApiTestBase {
         .expects(expectedAlbumWithSongs.album.id, patchRequest)
         .returning(Future.successful(None))
 
-      val (statusCode, _) =
-        provokeServerFailure(
-          app,
-          Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
-          expectedStatus = Status.NotFound
+      provokeServerFailure(
+        app,
+        Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
+        expectedStatus = Status.NotFound
+      )
 
-        )
-
-      assert(statusCode == Status.NotFound)
     }
   }
 
@@ -104,11 +94,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .returning(Future.successful(expectedAlbumWithSongs))
 
-      val (statusCode, body: AlbumWithSongs) =
-        provokeServerSuccess[AlbumWithSongs](app, Request.post(s"/albums", body = Body.from(createAlbumRequest)))
+      provokeServerSuccess[AlbumWithSongs](
+        app,
+        Request.post(s"/albums", body = Body.from(createAlbumRequest)),
+        expectedStatus   = Status.Created,
+        payloadAssertion = _ == expectedAlbumWithSongs
+      )
 
-      assert(statusCode == Status.Created)
-      assert(body == expectedAlbumWithSongs)
     }
 
     it("should call AlbumManager.create and return a 500 response when creation is not successful") {
@@ -116,14 +108,11 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
 
-      val (statusCode, error) =
-        provokeServerFailure(
-          app,
-          Request.post(s"albums", body = Body.from(createAlbumRequest)),
-          expectedStatus = Status.InternalServerError
-        )
-
-      assert(statusCode == Status.InternalServerError)
+      provokeServerFailure(
+        app,
+        Request.post(s"albums", body = Body.from(createAlbumRequest)),
+        expectedStatus = Status.InternalServerError
+      )
     }
 
     it("should call AlbumManager.create and return a 400 response when album already exists") {
@@ -133,10 +122,17 @@ class AlbumApiTest extends ApiTestBase {
 
       val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
 
-      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.BadRequest)
-        assert(responseAs[ErrorResponse].error == s"album already exists")
-      }
+      provokeServerFailure(
+        app,
+        Request.post(s"albums", body = Body.from(createAlbumRequest)),
+        expectedStatus = Status.BadRequest,
+        _.error == s"album already exists"
+      )
+
+      //      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
+      //        assert(status == StatusCodes.BadRequest)
+      //        assert(responseAs[ErrorResponse].error == s"album already exists")
+      //      }
     }
 
     it("should return a 400 response when the album has no songs") {

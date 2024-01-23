@@ -8,20 +8,21 @@ import org.slf4j.{Logger, LoggerFactory}
 import zio.schema.{DeriveSchema, Schema}
 
 import scala.concurrent.ExecutionContext
-
 import zio._
 import zio.http._
 import zio.http.codec.PathCodec
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 import zio.http.endpoint.Endpoint
-
 import Schemas._
+import co.adhoclabs.template.exceptions.AlbumAlreadyExistsException
 
 object AlbumEndpoints {
   val submit =
     Endpoint(Method.POST / "albums")
       .in[CreateAlbumRequest]
       .out[AlbumWithSongs](Status.Created)
+      .outError[ErrorResponse](Status.BadRequest)
+      .outError[ErrorResponse](Status.InternalServerError)
       .examplesIn(
         "simple" ->
           CreateAlbumRequest(
@@ -101,7 +102,13 @@ case class AlbumRoutes(implicit albumManager: AlbumManager) {
           implicit ec =>
             albumManager.create(createAlbumRequest)
         ).orDie
-
+      //          .mapError { ex =>
+      //            println("ex that needs a 500: " + ex)
+      //            ex match {
+      //              case conflict: AlbumAlreadyExistsException => conflict.errorResponse
+      //              case other                                 => ErrorResponse(other.getMessage)
+      //            }
+      //          }
     }
   }
 

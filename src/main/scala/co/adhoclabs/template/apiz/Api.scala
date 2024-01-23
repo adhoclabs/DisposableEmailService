@@ -53,15 +53,19 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
       println("In handleErrorCause")
       cause match {
         case Cause.Fail(value, trace) =>
-          println("fail")
-          Response(Status.InternalServerError, body = Body.from(ErrorResponse(value.toString)))
+          println("fail status: " + value.status)
+          //          value.
+          value
+          value
+        //          Response(Status.InternalServerError, body = value.body)
         case Cause.Die(value, trace) =>
           value match {
             case validationException: ValidationException =>
+              println("ValidationException: " + validationException)
               Response(Status.BadRequest, body = Body.from(validationException.errorResponse))
             case unexpectedException: UnexpectedException =>
               println("Unexpected: " + unexpectedException)
-              Response(Status.BadRequest, body = Body.from(unexpectedException.errorResponse))
+              Response(Status.InternalServerError, body = Body.from(unexpectedException.errorResponse))
             case exception: Exception =>
               logger.error("", exception)
               println("", exception)
