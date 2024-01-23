@@ -7,7 +7,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.{ExceptionHandler, Rejection, RouteResult}
 import akka.util.ByteString
-import co.adhoclabs.template.api.ApiBase
+import co.adhoclabs.model.ErrorResponse
+import co.adhoclabs.template.api.{ApiBase, Schemas}
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
@@ -46,32 +47,33 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val zioRoutes = (docsRoute ++ healthRoute.routes ++ albumApiZ.routes ++ songRoutes.routes ++ unhandled)
-    .mapErrorZIO { error =>
-      println("error: " + error)
-      ZIO.fail(error)
-    }
-    //    .handleErrorRequest()
     .handleErrorCause { cause =>
+      import Schemas.errorResponseSchema
+      import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
       println("In handleErrorCause")
       cause match {
         case Cause.Fail(value, trace) =>
           println("fail")
-          Response(Status.InternalServerError, body = Body.fromString("Shouldn't be possible, right? TODO Confirm. Error: " + value))
+          Response(Status.InternalServerError, body = Body.from(ErrorResponse(value.toString)))
         case Cause.Die(value, trace) =>
           value match {
-            case validationException: ValidationException => ???
-            case unexpectedException: UnexpectedException => ???
+            case validationException: ValidationException =>
+              Response(Status.BadRequest, body = Body.from(validationException.errorResponse))
+            case unexpectedException: UnexpectedException =>
+              println("Unexpected: " + unexpectedException)
+              Response(Status.BadRequest, body = Body.from(unexpectedException.errorResponse))
             case exception: Exception =>
               logger.error("", exception)
               println("", exception)
-              ???
-            case rawThrowable => ???
+              Response(Status.InternalServerError, body = Body.from(ErrorResponse("Exception. " + exception.getMessage)))
+            case rawThrowable =>
+              Response(Status.BadRequest, body = Body.from(ErrorResponse(rawThrowable.getMessage)))
           }
         case interrupt: Cause.Interrupt =>
-          Response(Status.InternalServerError, body = Body.fromString("Process Interrupted. " + interrupt))
+          Response(Status.InternalServerError, body = Body.from(ErrorResponse("Process Interrupted. " + interrupt)))
         case other =>
           println("Other: " + other)
-          Response(Status.Forbidden, body = Body.fromString(other.prettyPrint))
+          Response(Status.Forbidden, body = Body.from(ErrorResponse(other.prettyPrint)))
 
       }
       //      Response(Status.Forbidden, body = Body.fromString(cause.prettyPrint))

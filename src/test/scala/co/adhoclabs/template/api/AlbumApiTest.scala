@@ -20,6 +20,7 @@ import zio.schema.{DynamicValue, Schema}
 
 import java.io
 import java.util.UUID
+//import Schemas._
 import scala.concurrent.Future
 
 class AlbumApiTest extends ApiTestBase {
@@ -40,22 +41,36 @@ class AlbumApiTest extends ApiTestBase {
   val zioRoutes = ApiZ().zioRoutes
   val app = zioRoutes.toHttpApp
 
-  def provokeServerFailure[T: Schema](request: Request): (Status, ErrorResponse) = {
-    invokeZioRequest(request).left.getOrElse(throw new Exception("Broken test!"))
+  def provokeServerFailure(request: Request): (Status, ErrorResponse) = {
+    import Schemas.errorResponseSchema
+    val rez =
+      invokeZioRequest[ErrorResponse](request)
+
+    rez
+      .left
+      .getOrElse(throw new Exception("Broken failure test!"))
   }
 
   def provokeServerSuccess[T: Schema](request: Request): (Status, T) = {
-    invokeZioRequest(request).right.getOrElse(throw new Exception("Broken test!"))
+    invokeZioRequest(request).right.getOrElse(throw new Exception("Broken successful test!"))
   }
 
   def invokeZioRequest[T: Schema](request: Request): Either[(Status, ErrorResponse), (Status, T)] = {
+    import Schemas.errorResponseSchema
     val runtime = zio.Runtime.default
+    import zio.schema._
+    //    import zio.schema.derivation._
+    import zio.json._
+    import spray.json._
+    import DefaultJsonProtocol._
     Unsafe.unsafe { implicit unsafe =>
       runtime.unsafe.run {
         (for {
           response <- app.apply(request)
-          _ <- ZIO.when(response.status.isClientError)(
-            ZIO.fail((response.status, ErrorResponse("Not found!")))
+          _ <- ZIO.when(response.status.isError)(
+            for {
+              errorResponse <- response.body.to[ErrorResponse]
+            } yield ZIO.fail((response.status, errorResponse))
           )
           res <- response.body.to[T]
         } yield (response.status, res))
@@ -65,7 +80,13 @@ class AlbumApiTest extends ApiTestBase {
           }
       }
     } match {
-      case Exit.Success(value) => Right(value)
+      case Exit.Success((status, value)) =>
+        value match {
+          case er: ErrorResponse =>
+            Left((status, er))
+          case other =>
+            Right((status, value))
+        }
       case Exit.Failure(cause) =>
         cause match {
           case Cause.Empty => ???
@@ -104,9 +125,9 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(None))
 
       val (status, errorResponse) =
-        provokeServerFailure[AlbumWithSongs](Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
+        provokeServerFailure(Request.get(s"albums/${expectedAlbumWithSongs.album.id}"))
       assert(status == Status.NotFound)
-      assert(errorResponse == ErrorResponse("Not found!"))
+      assert(errorResponse == ErrorResponse("Could not find album!"))
     }
   }
 
@@ -135,7 +156,7 @@ class AlbumApiTest extends ApiTestBase {
         .returning(Future.successful(None))
 
       val (statusCode, _) =
-        provokeServerFailure[Album](Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
+        provokeServerFailure(Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)))
 
       assert(statusCode == Status.NotFound)
     }
@@ -147,12 +168,11 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .returning(Future.successful(expectedAlbumWithSongs))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+      val (statusCode, body: AlbumWithSongs) =
+        provokeServerSuccess[AlbumWithSongs](Request.post(s"/albums", body = Body.from(createAlbumRequest)))
 
-      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.Created)
-        assert(responseAs[AlbumWithSongs] == expectedAlbumWithSongs)
-      }
+      assert(statusCode == Status.Created)
+      assert(body == expectedAlbumWithSongs)
     }
 
     it("should call AlbumManager.create and return a 500 response when creation is not successful") {
@@ -160,11 +180,10 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .throwing(AlbumNotCreatedException(expectedAlbumWithSongs.album))
 
-      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
+      val (statusCode, error) =
+        provokeServerFailure(Request.post(s"albums", body = Body.from(createAlbumRequest)))
 
-      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.InternalServerError)
-      }
+      assert(statusCode == Status.InternalServerError)
     }
 
     it("should call AlbumManager.create and return a 400 response when album already exists") {

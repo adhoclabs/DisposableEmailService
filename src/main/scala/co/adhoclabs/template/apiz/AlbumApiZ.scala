@@ -21,7 +21,7 @@ object AlbumEndpoints {
   val submit =
     Endpoint(Method.POST / "albums")
       .in[CreateAlbumRequest]
-      .out[AlbumWithSongs]
+      .out[AlbumWithSongs](Status.Created)
       .examplesIn(
         "simple" ->
           CreateAlbumRequest(
