@@ -73,7 +73,7 @@ object AlbumEndpoints {
   val delete =
     // TODO Return 404 when album with id not found?
     Endpoint(Method.DELETE / "albums" / uuid("albumId"))
-      .out[EmptyResponse] // TODO Why not AlbumWithSongs here?
+      .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
   val openAPI =
     OpenAPIGen.fromEndpoints(

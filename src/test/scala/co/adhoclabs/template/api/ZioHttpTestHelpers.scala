@@ -10,7 +10,12 @@ import zio.schema.Schema
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 
 trait ZioHttpTestHelpers extends AsyncFunSpec with AsyncMockFactory with OneInstancePerTest {
-  def provokeServerFailure(app: HttpApp[Any], request: Request, expectedStatus: Status, errorAssertion: ErrorResponse => Boolean = _ => true) = {
+  def provokeServerFailure(
+    app:            HttpApp[Any],
+    request:        Request,
+    expectedStatus: Status,
+    errorAssertion: ErrorResponse => Boolean = _ => true
+  ) = {
     import Schemas.errorResponseSchema
 
     val (status, errorResponse) =
@@ -24,7 +29,12 @@ trait ZioHttpTestHelpers extends AsyncFunSpec with AsyncMockFactory with OneInst
     assert(errorAssertion(errorResponse))
   }
 
-  def provokeServerSuccess[T: Schema](app: HttpApp[Any], request: Request, expectedStatus: Status, payloadAssertion: T => Boolean = (_: T) => true) = {
+  def provokeServerSuccess[T: Schema](
+    app:              HttpApp[Any],
+    request:          Request,
+    expectedStatus:   Status,
+    payloadAssertion: T => Boolean = (_: T) => true
+  ) = {
     val (status, errorResponse) =
       invokeZioRequest(app, request)
         .right

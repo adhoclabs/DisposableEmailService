@@ -84,15 +84,15 @@ case class ApiZ(implicit albumApiZ: AlbumRoutes, songRoutes: SongRoutes, healthR
     }
     .mapErrorZIO(errResponse =>
       ZIO.debug("ErrorResponse: " + errResponse).as(errResponse)) @@
-    //    Middleware.requestLogging(statusCode => zio.LogLevel.Warning) @@
-    Middleware.debug
-  //  @@ Middleware.intercept {
-  //      (request, response) =>
-  //        println("Should log stuffz")
-  //        response
-  //
-  //    }
+    Middleware.requestLogging(statusCode => zio.LogLevel.Warning)
+  //    Middleware.debug
 
+  /*    Middleware.intercept {
+        (request, response) =>
+          println("Submit to datadog")
+          response
+      }
+*/
 }
 trait Api extends ApiBase
 

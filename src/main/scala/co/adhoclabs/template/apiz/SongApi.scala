@@ -17,8 +17,9 @@ object SongApiEndpoints {
 
   implicit val schema: Schema[Song] = DeriveSchema.gen[Song]
 
+  // TODO Report that url param description gets attached to the endpoint, not the param
   val getSong =
-    Endpoint(Method.GET / "songs" / uuid("songId") ?? Doc.p("The unique identifier of the song"))
+    Endpoint(Method.GET / "songs" / (uuid("songId") ?? Doc.p("The unique identifier of the song")))
       .out[Song]
       .outError[ErrorResponse](Status.NotFound)
       .outError[ErrorResponse](Status.InternalServerError)
