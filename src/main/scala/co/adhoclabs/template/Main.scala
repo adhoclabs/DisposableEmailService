@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
+import co.adhoclabs.template.Main.config
 import co.adhoclabs.template.api.{Api, ApiImpl}
 import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.business._
@@ -25,11 +26,26 @@ object MainZio extends ZIOAppDefault {
   implicit val healthRoutes = HealthRoutes()
 
   val app = ApiZ().zioRoutes.toHttpApp
-
+  val config = Dependencies.config
+  val host = config.getString("co.adhoclabs.template.host")
+  val port = config.getInt("co.adhoclabs.template.port")
   def run = {
     ZIO.debug("Starting") *>
-      Server.serve(app).provide(Server.default)
-  }
+      Server.serve(app).provide(Server.defaultWith(config => config.binding(hostname = host, port = port))).exitCode
+    /*
+    TODO Can we replicate this exactly?
+    Akka startup output:
+
+      bindingFuture.onComplete {
+        case Success(serverBinding) =>
+          println("Starting Template with:")
+          println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
+          println(s"Listening to ${serverBinding.localAddress}")
+        case Failure(error) =>
+          println(s"error: ${error.getMessage}")
+      }
+       */
+    }
 }
 object Main {
 
