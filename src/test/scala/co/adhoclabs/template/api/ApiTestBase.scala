@@ -1,7 +1,7 @@
 package co.adhoclabs.template.api
 
 import co.adhoclabs.template.TestBase
-import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
+import co.adhoclabs.template.api.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 
 abstract class ApiTestBase extends TestBase with ZioHttpTestHelpers {

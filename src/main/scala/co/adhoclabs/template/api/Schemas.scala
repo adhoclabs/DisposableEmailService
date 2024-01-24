@@ -1,4 +1,4 @@
-package co.adhoclabs.template.apiz
+package co.adhoclabs.template.api
 
 import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 

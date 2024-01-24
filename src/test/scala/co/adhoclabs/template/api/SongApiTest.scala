@@ -1,13 +1,7 @@
 package co.adhoclabs.template.api
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model.ContentTypes.`application/json`
-import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
-import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
-import co.adhoclabs.template.models.{AlbumWithSongs, CreateSongRequest, Song}
-import spray.json._
+import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import zio.http.{Body, Request, Status}
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 

@@ -1,41 +1,56 @@
 package co.adhoclabs.template.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 import co.adhoclabs.template.business.HealthManager
-import org.slf4j.{Logger, LoggerFactory}
+import zio._
+import zio.http._
+import zio.http.endpoint.Endpoint
 
-import scala.concurrent.ExecutionContext
+object HealthEndpoint {
+  val okBoomer =
+    Endpoint(Method.GET / "health" / "boom")
+      .out[String]
 
-trait HealthApi extends ApiBase {
-  val routes: Route
+  val api =
+    Endpoint(Method.GET / "health" / "api")
+      .out[String]
+
+  val db =
+    Endpoint(Method.GET / "health" / "db")
+      .out[String]
+
+  val endpoints =
+    List(
+      api,
+      db,
+      okBoomer
+    )
 }
 
-class HealthApiImpl(implicit healthManager: HealthManager, executionContext: ExecutionContext) extends HealthApi {
-
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
-  // The health API is used by Kubernetes to determine whether a pod is ready to receive connections.
-  // Every service should have this route.
-  override val routes: Route = {
-    pathPrefix("health") {
-      concat(
-        path("api") {
-          get {
-            complete {
-              StatusCodes.OK
-            }
-          }
-        },
-        path("db") {
-          get {
-            complete {
-              healthManager.executeDbGet().map(_ => StatusCodes.OK)
-            }
-          }
-        }
-      )
+case class HealthRoutes(implicit healthManager: HealthManager) {
+  val api =
+    HealthEndpoint.api.implement {
+      Handler.fromZIO {
+        ZIO.succeed("API is healthy!")
+      }
     }
-  }
+
+  val db =
+    HealthEndpoint.db.implement {
+      Handler.fromZIO {
+        ZIO.fromFuture(
+          implicit ec =>
+            healthManager.executeDbGet()
+        ).map(_ => "DB is healthy!")
+          .orDie
+      }
+    }
+
+  val okBoomer =
+    HealthEndpoint.okBoomer.implement {
+      Handler.fromZIO {
+        ZIO.succeed(???)
+      } // .mapError(throwable => ErrorResponse(throwable.getMessage))
+    }
+
+  val routes = Routes(api, db, okBoomer)
 }

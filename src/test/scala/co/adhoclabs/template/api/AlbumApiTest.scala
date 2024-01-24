@@ -141,7 +141,7 @@ class AlbumApiTest extends ApiTestBase {
           .expects(expectedAlbumWithSongs.album.id)
           .returning(Future.successful(()))
 
-        import co.adhoclabs.template.apiz.Schemas.schema
+        import co.adhoclabs.template.api.Schemas.schema
         provokeServerSuccess[EmptyResponse](
           app,
           Request.delete(s"/albums/${expectedAlbumWithSongs.album.id}"),

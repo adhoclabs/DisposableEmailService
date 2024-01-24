@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
-import co.adhoclabs.template.api.{Api, ApiImpl}
-import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
+import co.adhoclabs.template.api.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
