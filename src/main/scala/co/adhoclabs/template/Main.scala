@@ -45,7 +45,7 @@ object MainZio extends ZIOAppDefault {
           println(s"error: ${error.getMessage}")
       }
        */
-    }
+  }
 }
 object Main {
 
