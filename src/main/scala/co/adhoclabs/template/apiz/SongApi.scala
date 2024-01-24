@@ -76,10 +76,11 @@ case class SongRoutes(implicit songManager: SongManager) {
   val createSong = SongApiEndpoints.createSong.implement(
     Handler.fromFunctionZIO { (createSongRequest: CreateSongRequest) =>
       ZIO.fromFuture(implicit ec =>
-        songManager.create(createSongRequest)).mapError {
+        songManager.create(createSongRequest)).tapError(err => ZIO.debug("Err: " + err)).mapError {
         case ex: SongAlreadyExistsException =>
           Right(BadRequestResponse(ex.getMessage))
         case throwable: Throwable =>
+          println("Basic throwable: " + throwable)
           Left(InternalErrorResponse(throwable.getMessage))
       }
     }

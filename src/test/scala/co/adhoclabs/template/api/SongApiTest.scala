@@ -70,10 +70,12 @@ class SongApiTest extends ApiTestBase {
         .expects(createSongRequest)
         .throwing(SongAlreadyExistsException("Song not created"))
 
-      Post(s"/songs", HttpEntity(`application/json`, s"""${createSongRequest.toJson}""")) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.BadRequest)
-        assert(responseAs[ErrorResponse].error == "Song not created")
-      }
+      provokeServerFailure(
+        app,
+        Request.post(s"/songs", body = Body.from(createSongRequest)),
+        expectedStatus = Status.BadRequest,
+        errorAssertion = _.error == s"Song not created"
+      )
     }
   }
 
