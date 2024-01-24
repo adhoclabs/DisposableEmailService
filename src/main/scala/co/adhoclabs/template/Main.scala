@@ -1,11 +1,9 @@
 package co.adhoclabs.template
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
-import co.adhoclabs.template.Main.config
 import co.adhoclabs.template.api.{Api, ApiImpl}
 import co.adhoclabs.template.apiz.{AlbumRoutes, ApiZ, HealthRoutes, SongRoutes}
 import co.adhoclabs.template.business._
@@ -17,7 +15,6 @@ import zio.http.Server
 
 import java.time.Clock
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 object MainZio extends ZIOAppDefault {
   import Dependencies._
@@ -47,26 +44,6 @@ object MainZio extends ZIOAppDefault {
        */
   }
 }
-object Main {
-
-  implicit val system: ActorSystem = Dependencies.actorSystem
-  implicit val executor: ExecutionContext = Dependencies.executionContext
-
-  val config = Dependencies.config
-
-  val host = config.getString("co.adhoclabs.template.host")
-  val port = config.getInt("co.adhoclabs.template.port")
-
-  val bindingFuture = Http.get(system).newServerAt(interface = host, port = port).bind(Dependencies.api.routes)
-  bindingFuture.onComplete {
-    case Success(serverBinding) =>
-      println("Starting Template with:")
-      println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
-      println(s"Listening to ${serverBinding.localAddress}")
-    case Failure(error) =>
-      println(s"error: ${error.getMessage}")
-  }
-}
 
 object Dependencies {
   // config
@@ -74,8 +51,7 @@ object Dependencies {
   implicit val clock: Clock = Clock.systemUTC()
 
   // akka/concurrency
-  implicit val actorSystem: ActorSystem = ActorSystem("template")
-  implicit val executionContext: ExecutionContext = actorSystem.dispatcher
+  implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   // aws
   private val awsConfig: Config = config.getConfig("co.adhoclabs.template.aws")
@@ -108,9 +84,6 @@ object Dependencies {
   implicit val healthManager: HealthManager = new HealthManagerImpl
   implicit val songManager: SongManager = new SongManagerImpl
   implicit val albumManager: AlbumManager = new AlbumManagerImpl
-
-  // api
-  val api: Api = new ApiImpl
 
 }
 

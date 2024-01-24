@@ -33,8 +33,6 @@ libraryDependencies ++= Seq(
   // Test dependencies
   "org.scalatest"     %% "scalatest"           % "3.2.16"        % Test,
   "org.scalamock"     %% "scalamock"           % "5.2.0"         % Test,
-  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion     % Test,
-  "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test,
 
   // ZIO-HTTP (Let's get away from akka!)
   "dev.zio" %% "zio-http" % "3.0.0-RC4+56-5c9b8c71-SNAPSHOT",
