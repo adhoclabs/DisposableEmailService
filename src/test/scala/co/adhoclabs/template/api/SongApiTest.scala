@@ -85,10 +85,12 @@ class SongApiTest extends ApiTestBase {
         .expects(expectedSong)
         .returning(Future.successful(Some(expectedSong)))
 
-      Put(s"/songs/${expectedSong.id}", HttpEntity(`application/json`, s"""${expectedSong.toJson}""")) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.OK)
-        assert(responseAs[Song] == expectedSong)
-      }
+      provokeServerSuccess[Song](
+        app,
+        Request.put(s"/songs/${expectedSong.id}", body = Body.from(expectedSong)),
+        expectedStatus   = Status.Ok,
+        payloadAssertion = _ == expectedSong
+      )
     }
 
     it("should call SongManager.update and return a 404 when song doesn't exist") {
@@ -96,9 +98,11 @@ class SongApiTest extends ApiTestBase {
         .expects(expectedSong)
         .returning(Future.successful(None))
 
-      Put(s"/songs/${expectedSong.id}", HttpEntity(`application/json`, s"""${expectedSong.toJson}""")) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.NotFound)
-      }
+      provokeServerFailure(
+        app,
+        Request.put(s"/songs/${expectedSong.id}", body = Body.from(expectedSong)),
+        expectedStatus = Status.NotFound
+      )
     }
   }
 
@@ -108,9 +112,11 @@ class SongApiTest extends ApiTestBase {
         .expects(expectedSong.id)
         .returning(Future.successful(()))
 
-      Delete(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.NoContent)
-      }
+      provokeServerSuccess[Unit](
+        app,
+        Request.delete(s"/songs/${expectedSong.id}"),
+        expectedStatus = Status.NoContent,
+      )
     }
   }
 }

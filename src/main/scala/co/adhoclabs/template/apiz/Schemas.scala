@@ -2,6 +2,16 @@ package co.adhoclabs.template.apiz
 
 import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 
+case class NotFoundRequestResponse(
+  error:     String,
+  errorCode: Option[Int]    = None,
+  contextId: Option[String] = None
+
+)
+object NotFoundRequestResponse {
+  def apply(errorResponse: ErrorResponse): NotFoundRequestResponse =
+    NotFoundRequestResponse(errorResponse.error, errorResponse.errorCode, errorResponse.contextId)
+}
 case class BadRequestResponse(
   error:     String,
   errorCode: Option[Int]    = None,
@@ -32,5 +42,6 @@ object Schemas {
 
   implicit val badRequestResponse: Schema[BadRequestResponse] = DeriveSchema.gen
   implicit val internalErrorResponse: Schema[InternalErrorResponse] = DeriveSchema.gen
+  implicit val notFoundRequestResponse: Schema[NotFoundRequestResponse] = DeriveSchema.gen
 
 }

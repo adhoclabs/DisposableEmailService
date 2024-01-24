@@ -10,7 +10,7 @@ import zio._
 import zio.http._
 import zio.http.endpoint.Endpoint
 import Schemas._
-import co.adhoclabs.template.exceptions.SongAlreadyExistsException
+import co.adhoclabs.template.exceptions.{SongAlreadyExistsException, ValidationException}
 
 object SongApiEndpoints {
   import zio.http.codec.PathCodec._
@@ -42,11 +42,17 @@ object SongApiEndpoints {
 
   val updateSong =
     Endpoint(Method.PUT / "songs" / uuid("songId") ?? Doc.p("The unique identifier of the song"))
-      .in[Song] ?? Doc.p("Update a song")
+      .in[Song]
+      .out[Song]
+      .outError[NotFoundRequestResponse](Status.NotFound)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest) ?? Doc.p("Update a song")
 
   val deleteSong =
     Endpoint(Method.DELETE / "songs" / uuid("songId") ?? Doc.p("The unique identifier of the song"))
-      .out[Unit] ?? Doc.p("Delete a song")
+      .out[Unit](Status.NoContent)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
 
   val endpoints =
     List(
@@ -86,10 +92,38 @@ case class SongRoutes(implicit songManager: SongManager) {
     }
   )
 
+  val updateSong = SongApiEndpoints.updateSong.implement(
+    Handler.fromFunctionZIO {
+      case (songId: UUID, song: Song) =>
+        ZIO.fromFuture(implicit ec =>
+          songManager.update(song)).mapError {
+          case throwable: Throwable =>
+            Left(Right(InternalErrorResponse(throwable.getMessage)))
+        }.someOrFail {
+          println("Song not found")
+          Left(Left(NotFoundRequestResponse("Song not found: " + songId)))
+        }
+    }
+  )
+
+  val deleteSong = SongApiEndpoints.deleteSong.implement(
+    Handler.fromFunctionZIO { (songId: UUID) =>
+      ZIO.fromFuture(implicit ec =>
+        songManager.delete(songId)).mapError {
+        case ex: ValidationException =>
+          Right(BadRequestResponse(ex.getMessage))
+        case throwable: Throwable =>
+          Left(InternalErrorResponse(throwable.getMessage))
+      }
+    }
+  )
+
   val routes =
     Routes(
       getSong,
-      createSong
+      createSong,
+      updateSong,
+      deleteSong
 
     )
 }
