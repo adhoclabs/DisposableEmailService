@@ -31,7 +31,6 @@ class AlbumApiTest extends ApiTestBase {
         expectedStatus   = Status.Created,
         payloadAssertion = _ == expectedAlbumWithSongs
       )
-
     }
 
     it("should call AlbumManager.get and return a 404 when album doesn't exist") {
@@ -66,7 +65,6 @@ class AlbumApiTest extends ApiTestBase {
         expectedStatus   = Status.Ok,
         payloadAssertion = _ == expectedAlbumWithSongs.album
       )
-
     }
 
     it("should call AlbumManager.update and return a 404 when album doesn't exist") {
@@ -79,7 +77,6 @@ class AlbumApiTest extends ApiTestBase {
         Request.patch(s"albums/${expectedAlbumWithSongs.album.id}", body = Body.from(expectedAlbumWithSongs.album)),
         expectedStatus = Status.NotFound
       )
-
     }
   }
 
@@ -95,7 +92,6 @@ class AlbumApiTest extends ApiTestBase {
         expectedStatus   = Status.Created,
         payloadAssertion = _ == expectedAlbumWithSongs
       )
-
     }
 
     it("should call AlbumManager.create and return a 500 response when creation is not successful") {
@@ -115,19 +111,12 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequest)
         .throwing(AlbumAlreadyExistsException("album already exists"))
 
-      //      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequest.toJson}""")
-
       provokeServerFailure(
         app,
         Request.post(s"albums", body = Body.from(createAlbumRequest)),
         expectedStatus = Status.BadRequest,
         errorAssertion = _.error == s"album already exists"
       )
-
-      //      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
-      //        assert(status == StatusCodes.BadRequest)
-      //        assert(responseAs[ErrorResponse].error == s"album already exists")
-      //      }
     }
 
     it("should return a 400 response when the album has no songs") {
@@ -137,19 +126,13 @@ class AlbumApiTest extends ApiTestBase {
         .expects(createAlbumRequestNoSongs)
         .throwing(NoSongsInAlbumException(createAlbumRequestNoSongs))
 
-      //      val requestEntity = HttpEntity(`application/json`, s"""${createAlbumRequestNoSongs.toJson}""")
-
       provokeServerFailure(
         app,
         Request.post(s"albums", body = Body.from(createAlbumRequestNoSongs)),
         expectedStatus = Status.BadRequest,
-      //        error => error.error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs."
+        error => error.error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs."
       )
 
-      //      Post(s"/albums", requestEntity) ~> Route.seal(routes) ~> check {
-      //        assert(status == StatusCodes.BadRequest)
-      //        assert(responseAs[ErrorResponse].error == s"Not creating album entitled ${createAlbumRequest.title} because it had no songs.")
-      //      }
     }
 
     describe("DELETE /albums/:id") {
@@ -164,10 +147,6 @@ class AlbumApiTest extends ApiTestBase {
           Request.delete(s"/albums/${expectedAlbumWithSongs.album.id}"),
           expectedStatus = Status.NoContent
         )
-
-        //        Delete(s"/albums/${expectedAlbumWithSongs.album.id}") ~> Route.seal(routes) ~> check {
-        //          assert(status == StatusCodes.NoContent)
-        //        }
       }
     }
   }

@@ -5,12 +5,12 @@ import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 import co.adhoclabs.template.business.SongManager
 import co.adhoclabs.template.models.{CreateSongRequest, Song}
 import zio.http.codec.Doc
-
 import zio.schema.{DeriveSchema, Schema}
 import zio._
 import zio.http._
 import zio.http.endpoint.Endpoint
 import Schemas._
+import co.adhoclabs.template.exceptions.SongAlreadyExistsException
 
 object SongApiEndpoints {
   import zio.http.codec.PathCodec._
@@ -35,7 +35,10 @@ object SongApiEndpoints {
 
   val createSong =
     Endpoint(Method.POST / "songs")
-      .in[CreateSongRequest] ?? Doc.p("Create a song")
+      .in[CreateSongRequest]
+      .out[Song](Status.Created)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
 
   val updateSong =
     Endpoint(Method.PUT / "songs" / uuid("songId") ?? Doc.p("The unique identifier of the song"))
@@ -70,9 +73,22 @@ case class SongRoutes(implicit songManager: SongManager) {
 
   )
 
+  val createSong = SongApiEndpoints.createSong.implement(
+    Handler.fromFunctionZIO { (createSongRequest: CreateSongRequest) =>
+      ZIO.fromFuture(implicit ec =>
+        songManager.create(createSongRequest)).mapError {
+        case ex: SongAlreadyExistsException =>
+          Right(BadRequestResponse(ex.getMessage))
+        case throwable: Throwable =>
+          Left(InternalErrorResponse(throwable.getMessage))
+      }
+    }
+  )
+
   val routes =
     Routes(
-      getSong
+      getSong,
+      createSong
 
     )
 }

@@ -6,8 +6,10 @@ import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.template.exceptions.SongAlreadyExistsException
-import co.adhoclabs.template.models.{CreateSongRequest, Song}
+import co.adhoclabs.template.models.{AlbumWithSongs, CreateSongRequest, Song}
 import spray.json._
+import zio.http.{Body, Request, Status}
+import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 
 import scala.concurrent.Future
 
@@ -27,10 +29,12 @@ class SongApiTest extends ApiTestBase {
         .expects(expectedSong.id)
         .returning(Future.successful(Some(expectedSong)))
 
-      Get(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.OK)
-        assert(responseAs[Song] == expectedSong)
-      }
+      provokeServerSuccess[Song](
+        app,
+        Request.get(s"/songs/${expectedSong.id}"),
+        expectedStatus   = Status.Ok,
+        payloadAssertion = _ == expectedSong
+      )
     }
 
     it("should call SongManager.get and return a 404 response song doesn't exist") {
@@ -38,22 +42,27 @@ class SongApiTest extends ApiTestBase {
         .expects(expectedSong.id)
         .returning(Future.successful(None))
 
-      Get(s"/songs/${expectedSong.id}") ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.NotFound)
-      }
+      provokeServerFailure(
+        app,
+        Request.get(s"/songs/${expectedSong.id}"),
+        expectedStatus = Status.NotFound,
+      )
     }
   }
 
   describe("POST /songs") {
+
     it("should call SongManager.create and return created song with ID when successful") {
       (songManager.create _)
         .expects(createSongRequest)
         .returning(Future.successful(expectedSong))
 
-      Post("/songs", HttpEntity(`application/json`, s"""${createSongRequest.toJson}""")) ~> Route.seal(routes) ~> check {
-        assert(status == StatusCodes.Created)
-        assert(responseAs[Song] == expectedSong)
-      }
+      provokeServerSuccess[Song](
+        app,
+        Request.post(s"/songs", body = Body.from(createSongRequest)),
+        expectedStatus   = Status.Created,
+        payloadAssertion = _ == expectedSong
+      )
     }
 
     it("should call SongManager.create and return a 400 response when creation is not successful") {
