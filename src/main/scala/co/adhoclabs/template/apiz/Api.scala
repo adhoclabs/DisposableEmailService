@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.{ExceptionHandler, Rejection, RouteResult}
 import akka.util.ByteString
 import co.adhoclabs.model.ErrorResponse
-import co.adhoclabs.template.api.{ApiBase, Schemas}
+import co.adhoclabs.template.api.ApiBase
 import co.adhoclabs.template.business.{AlbumManager, HealthManager, SongManager}
 import co.adhoclabs.template.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
