@@ -6,8 +6,6 @@ version := "0.1"
 
 scalaVersion := "2.12.12"
 
-val akkaVersion = "2.6.16"
-val akkaHttpVersion = "10.2.6"
 
 resolvers +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
@@ -15,10 +13,6 @@ resolvers +=
 libraryDependencies ++= Seq(
   // External dependencies
   "ch.qos.logback"      %  "logback-classic"      % "1.2.3",
-  "com.typesafe.akka"   %% "akka-actor"           % akkaVersion,
-  "com.typesafe.akka"   %% "akka-stream"          % akkaVersion,
-  "com.typesafe.akka"   %% "akka-http"            % akkaHttpVersion,
-  "com.typesafe.akka"   %% "akka-http-spray-json" % akkaHttpVersion,
   "org.postgresql"      %  "postgresql"           % "42.2.24",
   "com.typesafe.slick"  %% "slick"                % "3.3.3",
   "com.typesafe.slick"  %% "slick-hikaricp"       % "3.3.3",
