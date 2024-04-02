@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-name: {{ .Values.cluster.namespace }}-TEMPLATE_SVC_BASE-service-lb
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-west-2:714011589920:certificate/f7e0bff1-7284-4e5d-935e-bca844ba9139
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+    service.beta.kubernetes.io/aws-load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=adhoclabs-http-logs,access_logs.s3.prefix={{ .Values.cluster.namespace }}-burner/TEMPLATE_SVC_BASE-service
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
+  name: TEMPLATE_SVC_BASE-service
+  namespace: {{ .Values.cluster.namespace }}
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+    - name: https
+      port: {{ .Values.service.port }}
+      protocol: TCP
+      targetPort: {{ .Values.nginxSettings.port }}
+  selector:
+    app: TEMPLATE_SVC_BASE-service
+  sessionAffinity: None
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb

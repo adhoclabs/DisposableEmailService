@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  application_gen.conf: |
+    include "application"
+    akka.loglevel="INFO"
+    akka.scheduler.tick-duration="100ms"
+    co.adhoclabs.TEMPLATE_PKG_PATH.port={{ .Values.appSettings.port }}
+kind: ConfigMap
+metadata:
+{{- if .Values.configMap.preserveOldReleases }}
+  annotations:
+      "helm.sh/resource-policy": keep
+{{- end }}
+  name: TEMPLATE_SVC_BASE-service-app-dot-conf-{{ include "TEMPLATE_SVC_BASE-chart.cm-suffix" . }}
+  namespace: {{ .Values.cluster.namespace }}

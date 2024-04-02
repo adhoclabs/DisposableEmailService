@@ -1,0 +1,13 @@
+cluster:
+  namespace: default
+
+image:
+  tag: ":1.0.0"
+
+appSettings:
+  replicas: 1
+  db:
+    hostname: host.docker.internal
+
+service:
+  port: 9011

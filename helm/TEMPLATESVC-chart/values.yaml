@@ -1,0 +1,65 @@
+# Default values for TEMPLATE_SVC_BASE-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repo: 714011589920.dkr.ecr.us-west-2.amazonaws.com/TEMPLATE_SVC_BASE-service
+  # tags need '@' or ':' depending on what is used
+  tag: "@sha256:not-a-real-commit-hash"
+  nginxTag: ":1.21.5"
+
+cluster:
+  namespace: default
+
+awsSettings:
+  iamRoleArnBase: arn:aws:iam::714011589920:role
+  iamRole: dev-TEMPLATE_SVC_BASE-service-sa
+  region: us-west-2
+
+appSettings:
+  javaOpts: "-Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms100m -Xmx1g"
+  exampleSecretId: dev-TEMPLATE_SVC_BASE-secret-shhhh
+  replicas: 1
+  port: 9000
+  db:
+    hostname: localhost
+    dbname:  TEMPLATE_DB
+    username: TEMPLATE_DB
+    password: TEMPLATE_DB
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "1124Mi"
+
+nginxSettings:
+  port: 9011
+  resources:
+    limits:
+      cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 32Mi
+
+configMap:
+  preserveOldReleases: false
+
+datadog:
+  enabled: false
+  traceSampleRate: "0.1"
+  logsInjection: "false"
+  apmHttpErrorStatuses: "400-403,405-428,430-499,500-599"
+
+service:
+  port: 443
+
+argoStrategy:
+  canary:
+    antiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        weight: 1
+    maxSurge: "100%"
+    maxUnavailable: "0"

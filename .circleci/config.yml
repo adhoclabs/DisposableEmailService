@@ -1,0 +1,136 @@
+---
+version: 2
+
+jobs:
+
+  run_tests:
+    docker:
+     - image: ahlops/scala-builder:2.0.4
+    resource_class: medium
+    working_directory: ~/repo
+    steps:
+      - checkout:
+          path: ~/repo
+
+      - restore_cache:
+          key: v1-dependencies-{{ checksum "build.sbt" }}
+
+      - run:
+          name: bootstrap db
+          command: |
+            /usr/local/bin/start_postgresdb.sh \
+            && psql -h localhost -U postgres -tc "CREATE ROLE music WITH SUPERUSER CREATEDB CREATEROLE LOGIN ENCRYPTED PASSWORD 'music';" \
+            && psql -h localhost -U postgres -tc "CREATE DATABASE music;"
+
+      - run:
+          name: run flyway migrations
+          command: flyway migrate
+
+      - run:
+          name: copy buildfiles
+          command: cp -avf cicd/dotsbt/* ~/.sbt/
+
+      - run:
+          name: set nexus user/password
+          command: |
+            echo "user=${NEXUS_USER}" >> ~/.sbt/credentials
+            echo "password=${NEXUS_PASSWORD}" >> ~/.sbt/credentials
+
+      - run:
+          name: run tests
+          command: |
+            mkdir -p ./target/test-reports
+            sbt test \
+            && find -name target -exec tar -zcf targets.tar.gz -H posix {} +
+
+      - store_test_results:
+          path: ./target/test-reports
+
+      - save_cache:
+          key: v1-dependencies-{{ checksum "build.sbt" }}
+          paths:
+            - "~/.ivy2/cache"
+            - "~/.cache"
+            - "~/.sbt"
+
+      - save_cache:
+          key: v1-target-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - "~/repo/targets.tar.gz"
+
+  build_and_push:
+    docker:
+      - image: ahlops/scala-builder:2.0.2
+    resource_class: medium
+    working_directory: ~/repo
+    environment:
+      CONTAINER_NAME: microservice-template
+    steps:
+      - checkout:
+          path: ~/repo
+
+      - restore_cache:
+          key: v1-dependencies-{{ checksum "build.sbt" }}
+
+      - restore_cache:
+          key: v1-target-{{ .Environment.CIRCLE_SHA1 }}
+
+      - run:
+          name: copy s3 files
+          command: |
+            sh ./bin/copy_s3_files.sh
+
+      - run:
+          name: Unpack target dir
+          command: tar -xf targets.tar.gz
+
+      - run:
+          name: build package
+          command: sbt assembly
+
+      - setup_remote_docker:
+          docker_layer_caching: false
+
+      - run:
+          name: build container image
+          command: |
+            export ARTIFACT_PATH=`ls target/scala-2.12/*.jar` \
+            && docker build --build-arg jar_path=${ARTIFACT_PATH} -t ${CONTAINER_NAME} .
+
+      - run:
+          name: push container image to ECR
+          command: |
+            export GIT_SHA=`cat .git/refs/heads/*`
+            aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${AWS_ECR_REGISTRY} \
+            && docker tag ${CONTAINER_NAME}:latest ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${GIT_SHA} \
+            && docker push ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${GIT_SHA} \
+            && docker tag ${CONTAINER_NAME}:latest ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${CIRCLE_TAG} \
+            && docker push ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${CIRCLE_TAG}
+
+workflows:
+  version: 2
+  test_only:
+    jobs:
+      - run_tests:
+          context: aws-nexus-builder
+          filters:
+            branches:
+              ignore: /release\/.*/
+  test_and_build:
+    jobs:
+      - run_tests:
+          context: aws-nexus-builder
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[A-Za-z0-9.-]+$/
+      - build_and_push:
+          requires:
+            - run_tests
+          context: aws-nexus-builder
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[A-Za-z0-9.-]+$/
