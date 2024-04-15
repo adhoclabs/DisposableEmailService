@@ -28,8 +28,8 @@ libraryDependencies ++= Seq(
   "org.scalamock" %% "scalamock" % "5.2.0"  % Test,
 
   // ZIO-HTTP (Let's get away from akka!)
-  "dev.zio"     %% "zio-http"         % "3.0.0-RC4+56-5c9b8c71-SNAPSHOT",
-  "dev.zio"     %% "zio-http-testkit" % "3.0.0-RC4+56-5c9b8c71-SNAPSHOT",
+  "dev.zio"     %% "zio-http"         % "3.0.0-RC6+2-020a5e56-SNAPSHOT",
+  "dev.zio"     %% "zio-http-testkit" % "3.0.0-RC6+2-020a5e56-SNAPSHOT",
   "dev.zio"     %% "zio-schema"       % "0.4.15",
   "com.lihaoyi" %% "sourcecode"       % "0.4.0"
 )
