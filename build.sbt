@@ -30,7 +30,7 @@ libraryDependencies ++= Seq(
   // ZIO-HTTP (Let's get away from akka!)
   "dev.zio"     %% "zio-http"         % "3.0.0-RC6+2-020a5e56-SNAPSHOT",
   "dev.zio"     %% "zio-http-testkit" % "3.0.0-RC6+2-020a5e56-SNAPSHOT",
-  "dev.zio"     %% "zio-schema"       % "0.4.15",
+  "dev.zio"     %% "zio-schema"       % "1.0.1",
   "com.lihaoyi" %% "sourcecode"       % "0.4.0"
 )
 
