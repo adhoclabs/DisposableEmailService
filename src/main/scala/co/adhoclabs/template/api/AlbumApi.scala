@@ -31,18 +31,21 @@ object AlbumEndpoints {
       )
 
   val file                                = implicitly[sourcecode.File]
+  val projectName                         = "disposable-email-service"
   def keepFilePath(file: sourcecode.File) = {
-    val projectName = "disposable-email-service"
-    val index       = file.value.indexOf(projectName)
+    val index = file.value.indexOf(projectName)
     file.value.drop(index + projectName.length + 1)
   }
 
-  val githubLink = {}
+  val githubLink = {
+    val filePath = keepFilePath(file)
+    s"https://github.com/adhoclabs/${projectName}/blob/main/$filePath"
+  }
 
   val get =
     // TODO Return 404 when album with id not found
     Endpoint(Method.GET / "albums" / uuid("albumId"))
-//      .??(Doc.p())
+      .??(Doc.p(s"$githubLink#L${implicitly[sourcecode.Line].value}"))
       .out[AlbumWithSongs](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
       .examplesIn(
