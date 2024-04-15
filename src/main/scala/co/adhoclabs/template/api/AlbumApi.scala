@@ -42,10 +42,12 @@ object AlbumEndpoints {
     s"https://github.com/adhoclabs/${projectName}/blob/main/$filePath"
   }
 
+  final def openApiSrcLink(line: sourcecode.Line) = Doc.p(s"$githubLink#L${line.value}")
+
   val get =
     // TODO Return 404 when album with id not found
     Endpoint(Method.GET / "albums" / uuid("albumId"))
-      .??(Doc.p(s"$githubLink#L${implicitly[sourcecode.Line].value}"))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[AlbumWithSongs](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
       .examplesIn(
