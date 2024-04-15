@@ -1,15 +1,22 @@
 package co.adhoclabs.template.api
 
 import java.util.UUID
-import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
-import co.adhoclabs.template.business.AlbumManager
-import co.adhoclabs.template.models.{Album, AlbumWithSongs, CreateAlbumRequest, Genre, PatchAlbumRequest}
+import co.adhoclabs.model.{Burner, EmptyResponse, ErrorResponse}
+import co.adhoclabs.template.models.{
+  Album,
+  AlbumWithSongs,
+  BurnerEmailAddress,
+  CreateAlbumRequest,
+  Genre,
+  PatchAlbumRequest
+}
 import zio.schema.{DeriveSchema, Schema}
 import zio._
 import zio.http._
 import zio.http.endpoint.openapi.OpenAPIGen
 import zio.http.endpoint.Endpoint
 import Schemas._
+import co.adhoclabs.template.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager}
 import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException}
 import zio.http.codec.Doc
 
@@ -17,8 +24,8 @@ object EmailEndpoints {
   val submit =
     Endpoint(Method.POST / "albums")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .in[CreateAlbumRequest]
-      .out[AlbumWithSongs](Status.Created)
+      .in[BurnerEmailAddress]
+      .out[BurnerEmailAddress](Status.Created)
       .outError[InternalErrorResponse](Status.InternalServerError)
       .outError[BadRequestResponse](Status.BadRequest)
 
@@ -39,48 +46,24 @@ object EmailEndpoints {
     Doc.fromCommonMark(s"[Src]($githubLink#L${line.value})")
   }
 
+  def emailMessageidPathCodec(name: String) = uuid(name).transform(BurnerEmailMessageId.apply)(_.id)
+
   val get =
     // TODO Return 404 when album with id not found
-    Endpoint(Method.GET / "albums" / uuid("albumId"))
+    Endpoint(Method.GET / "emailMessage" / emailMessageidPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .out[AlbumWithSongs](Status.Created)
+      .out[BurnerEmailMessage](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
       .examplesIn(
-        "Pre-existing Record" -> UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")
-      )
-
-  val patch =
-    Endpoint(Method.PATCH / "albums" / uuid("albumId"))
-      .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .in[PatchAlbumRequest]
-      .out[Album] // TODO Why not AlbumWithSongs here?
-      .outError[ErrorResponse](Status.NotFound)
-      .outError[ErrorResponse](Status.BadRequest)
-      .examplesIn(
-        "Change Title and Artists" ->
-          (
-            UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-            PatchAlbumRequest(
-              title = Some("Rock Album 1 - Director's Cut"),
-              artists = Some(List("Artist1", "Artist2")),
-              genre = Some(Genre.Rock)
-            )
-          ),
-        "Restore original"         -> (
-          UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-          PatchAlbumRequest(
-            title = Some("Rock Album 1"),
-            artists = Some(List("Artist1")),
-            genre = Some(Genre.Rock)
-          )
-        )
+        "Pre-existing Record" -> BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
 
   // TODO Why do we need this to be in this file, rather than just one more entry in the Schemas object?
   implicit val schema: Schema[EmptyResponse] = DeriveSchema.gen
+
   val delete =
     // TODO Return 404 when album with id not found?
-    Endpoint(Method.DELETE / "albums" / uuid("albumId"))
+    Endpoint(Method.DELETE / "emailMessages" / emailMessageidPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
@@ -90,7 +73,6 @@ object EmailEndpoints {
       version = "1.0",
       submit,
       get,
-      patch,
       delete
     )
 
@@ -98,31 +80,22 @@ object EmailEndpoints {
     List(
       submit,
       get,
-      patch,
       delete
     )
 }
 
 case class EmailRoutes(
   implicit
-  albumManager: AlbumManager
+  emailManager: EmailManager
 ) {
   val submit =
     EmailEndpoints.submit.implement {
-      Handler.fromFunctionZIO { (createAlbumRequest: CreateAlbumRequest) =>
+      Handler.fromFunctionZIO { (createAlbumRequest: BurnerEmailAddress) =>
         for {
           futureRes <-
-            ZIO.fromFuture(implicit ec => albumManager.create(createAlbumRequest)).mapError {
-              case conflict: AlbumAlreadyExistsException =>
-                println("Right")
-                Right(BadRequestResponse(conflict.errorResponse))
-
-              case ex: NoSongsInAlbumException =>
-                println("Right")
-                Right(BadRequestResponse(ex.errorResponse))
-              case other                       =>
-                println("Left")
-                Left(InternalErrorResponse(ErrorResponse(other.getMessage)))
+            ZIO.fromEither(emailManager.createBurnerEmailAddress(createAlbumRequest)).mapError {
+              case conflict: String =>
+                Right(BadRequestResponse(conflict))
             }
 
         } yield futureRes
@@ -131,29 +104,20 @@ case class EmailRoutes(
 
   val get =
     EmailEndpoints.get.implement {
-      Handler.fromFunctionZIO { (albumId: UUID) =>
+      Handler.fromFunctionZIO { (emailMessageId: BurnerEmailMessageId) =>
         ZIO
-          .fromFuture(implicit ec => albumManager.getWithSongs(albumId))
+          .fromOption[BurnerEmailMessage](None)
+          .mapError(_ => new Exception("No email message with id: " + emailMessageId))
           .orDie
-          .someOrFail(ErrorResponse("Could not find album!"))
-      }
-    }
-
-  val patch =
-    EmailEndpoints.patch.implement {
-      Handler.fromFunctionZIO { case (albumId: UUID, patchAlbumRequest: PatchAlbumRequest) =>
-        ZIO
-          .fromFuture(implicit ec => albumManager.patch(albumId, patchAlbumRequest))
-          .orDie
-          .someOrFail(ErrorResponse("Could not find album!"))
+//          .someOrFail(ErrorResponse("Could not find album!"))
       }
     }
 
   val delete =
     EmailEndpoints.delete.implement {
-      Handler.fromFunctionZIO { (albumId: UUID) =>
+      Handler.fromFunctionZIO { (albumId: BurnerEmailMessageId) =>
         ZIO
-          .fromFuture(implicit ec => albumManager.delete(albumId))
+          .fromFuture(implicit ec => emailManager.deleteMessage(albumId))
           .orDie
           .as(EmptyResponse())
       }
@@ -163,7 +127,6 @@ case class EmailRoutes(
     Routes(
       submit,
       get,
-      patch,
       delete
     )
 }

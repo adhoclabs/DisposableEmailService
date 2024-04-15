@@ -4,6 +4,7 @@ import co.adhoclabs.model.Voicemail.jsonFormat2
 import co.adhoclabs.model.{Conversation, MessageId, Voicemail}
 import co.adhoclabs.template.models.BurnerEmailAddress
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat}
+import zio.schema.{DeriveSchema, Schema}
 
 import java.time.Instant
 import java.util.UUID
@@ -52,6 +53,8 @@ case class BurnerEmailMessageId(
 object BurnerEmailMessageId extends DefaultJsonProtocol {
   implicit val uuidFormat                                       = BuiltInFormat.uuidJsonFormat
   implicit val jsonFormat: RootJsonFormat[BurnerEmailMessageId] = jsonFormat1(BurnerEmailMessageId.apply)
+
+  implicit val schema: Schema[BurnerEmailMessageId] = DeriveSchema.gen
 }
 
 case class BurnerEmailMessage(
@@ -68,6 +71,8 @@ case class BurnerEmailMessage(
 object BurnerEmailMessage   extends DefaultJsonProtocol {
   implicit val instantJsonFormat                              = BuiltInFormat.instantJsonFormat
   implicit val jsonFormat: RootJsonFormat[BurnerEmailMessage] = jsonFormat9(BurnerEmailMessage.apply)
+
+  implicit val schema: Schema[BurnerEmailMessage] = DeriveSchema.gen
 }
 
 trait EmailManager {
@@ -80,10 +85,27 @@ trait EmailManager {
   ): Future[List[BurnerEmailMessage]]
 
   def deleteMessage(
-      messageId: MessageId
+      messageId: BurnerEmailMessageId
   ): Future[Unit]
 
   def archiveMessage(
-      messageId: MessageId
+      messageId: BurnerEmailMessageId
   ): Future[Unit]
+}
+
+case class EmailManagerImpl() extends EmailManager {
+
+  override def createBurnerEmailAddress(burnerEmail: BurnerEmailAddress): Either[String, BurnerEmailAddress] =
+    ???
+
+  override def getConversations(
+      userId: String,
+      burnerEmailO: Option[BurnerEmailAddress],
+      pageO: Option[Int],
+      pageSizeO: Option[Int]
+  ): Future[List[BurnerEmailMessage]] = ???
+
+  override def deleteMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
+
+  override def archiveMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
 }

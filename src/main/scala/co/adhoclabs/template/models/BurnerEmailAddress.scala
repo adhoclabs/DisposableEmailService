@@ -1,5 +1,12 @@
 package co.adhoclabs.template.models
 
-import java.net.InetAddress
+import zio.schema.{DeriveSchema, Schema}
 
-case class BurnerEmailAddress(address: InetAddress)
+import java.net.{Inet4Address, InetAddress}
+
+case class BurnerEmailAddress(address: String)
+
+object BurnerEmailAddress {
+
+  implicit val schema: Schema[BurnerEmailAddress] = DeriveSchema.gen
+}
