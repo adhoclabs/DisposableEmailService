@@ -16,6 +16,7 @@ import zio.http.codec.Doc
 object AlbumEndpoints {
   val submit =
     Endpoint(Method.POST / "albums")
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[CreateAlbumRequest]
       .out[AlbumWithSongs](Status.Created)
       .outError[InternalErrorResponse](Status.InternalServerError)
@@ -59,6 +60,7 @@ object AlbumEndpoints {
 
   val patch =
     Endpoint(Method.PATCH / "albums" / uuid("albumId"))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[PatchAlbumRequest]
       .out[Album] // TODO Why not AlbumWithSongs here?
       .outError[ErrorResponse](Status.NotFound)
@@ -88,6 +90,7 @@ object AlbumEndpoints {
   val delete =
     // TODO Return 404 when album with id not found?
     Endpoint(Method.DELETE / "albums" / uuid("albumId"))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
   val openAPI =
