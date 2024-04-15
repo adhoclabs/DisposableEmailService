@@ -21,14 +21,6 @@ import co.adhoclabs.template.exceptions.{AlbumAlreadyExistsException, NoSongsInA
 import zio.http.codec.Doc
 
 object EmailEndpoints {
-  val submit =
-    Endpoint(Method.POST / "emailMessages")
-      .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .in[BurnerEmailAddress]
-      .out[BurnerEmailAddress](Status.Created)
-      .outError[InternalErrorResponse](Status.InternalServerError)
-      .outError[BadRequestResponse](Status.BadRequest)
-
   val file                                = implicitly[sourcecode.File]
   val projectName                         = "disposable-email-service"
   def keepFilePath(file: sourcecode.File) = {
@@ -57,6 +49,14 @@ object EmailEndpoints {
       .examplesIn(
         "Pre-existing Record" -> BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
+
+  val submit =
+    Endpoint(Method.POST / "emailMessages")
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
+      .in[BurnerEmailAddress]
+      .out[BurnerEmailAddress](Status.Created)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
 
   // TODO Why do we need this to be in this file, rather than just one more entry in the Schemas object?
   implicit val schema: Schema[EmptyResponse] = DeriveSchema.gen
