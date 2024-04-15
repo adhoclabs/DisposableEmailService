@@ -17,13 +17,7 @@ trait AlbumManager extends BusinessBase {
   def delete(id: UUID): Future[Unit]
 }
 
-class AlbumManagerImpl(
-  implicit
-  albumDao:         AlbumDao,
-  sqsManager:       SqsManager,
-  clock:            Clock,
-  executionContext: ExecutionContext
-) extends AlbumManager {
+class AlbumManagerImpl(implicit albumDao: AlbumDao, sqsManager: SqsManager, clock: Clock, executionContext: ExecutionContext) extends AlbumManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def getWithSongs(id: UUID): Future[Option[AlbumWithSongs]] = albumDao.getWithSongs(id)
@@ -36,32 +30,30 @@ class AlbumManagerImpl(
     // You can trigger this exception to be thrown by attempting a POST request with an album with no songs
     if (createAlbumRequest.songs.isEmpty) return Future.failed(NoSongsInAlbumException(createAlbumRequest))
 
-    val now: Instant  = clock.instant()
-    val album         =
-      Album(
-        id = UUID.randomUUID,
-        title = createAlbumRequest.title,
-        artists = createAlbumRequest.artists,
-        genre = createAlbumRequest.genre,
-        createdAt = now,
-        updatedAt = now
-      )
-    val albumToCreate =
-      AlbumWithSongs(
-        album = album,
-        songs =
-          createAlbumRequest.songs.zipWithIndex
-            .map { case (title, index) =>
-              Song(
-                id = UUID.randomUUID,
-                title = title,
-                albumId = album.id,
-                albumPosition = index + 1,
-                createdAt = now,
-                updatedAt = now
-              )
-            }
-      )
+    val now: Instant = clock.instant()
+    val album = Album(
+      id        = UUID.randomUUID,
+      title     = createAlbumRequest.title,
+      artists   = createAlbumRequest.artists,
+      genre     = createAlbumRequest.genre,
+      createdAt = now,
+      updatedAt = now
+    )
+    val albumToCreate = AlbumWithSongs(
+      album = album,
+      songs = createAlbumRequest.songs
+        .zipWithIndex
+        .map {
+          case (title, index) => Song(
+            id            = UUID.randomUUID,
+            title         = title,
+            albumId       = album.id,
+            albumPosition = index + 1,
+            createdAt     = now,
+            updatedAt     = now
+          )
+        }
+    )
 
     albumDao.create(albumToCreate) map { albumWithSongs =>
       sqsManager.sendFakeSqsEvent("fakeSqsPayload")
@@ -77,7 +69,7 @@ class AlbumManagerImpl(
         case Some(albumWithSongs) =>
           val patchedAlbum = albumWithSongs.album.patch(patchRequest)
           albumDao.update(patchedAlbum)
-        case None                 =>
+        case None =>
           Future.successful(None)
       }
     }

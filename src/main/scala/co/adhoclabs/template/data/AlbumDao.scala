@@ -24,30 +24,23 @@ trait AlbumDao {
 }
 
 case class AlbumsTable(tag: Tag) extends Table[Album](tag, "albums") {
-  def id: Rep[UUID]              = column[UUID]("id", O.PrimaryKey)
-  def title: Rep[String]         = column[String]("title")
+  def id: Rep[UUID] = column[UUID]("id", O.PrimaryKey)
+  def title: Rep[String] = column[String]("title")
   def artists: Rep[List[String]] = column[List[String]]("artists")
-  def genre: Rep[Genre]          = column[Genre]("genre")
-  def createdAt: Rep[Instant]    = column[Instant]("created_at")
-  def updatedAt: Rep[Instant]    = column[Instant]("updated_at")
+  def genre: Rep[Genre] = column[Genre]("genre")
+  def createdAt: Rep[Instant] = column[Instant]("created_at")
+  def updatedAt: Rep[Instant] = column[Instant]("updated_at")
 
   // Provides a default projection that maps between columns in the table and instances of our case class.
-  override def * : ProvenShape[Album] =
-    (id, title, artists, genre, createdAt, updatedAt) <> ((Album.apply _).tupled, Album.unapply)
+  override def * : ProvenShape[Album] = (id, title, artists, genre, createdAt, updatedAt) <> ((Album.apply _).tupled, Album.unapply)
 }
 
-class AlbumDaoImpl(
-  implicit
-  db:               Database,
-  executionContext: ExecutionContext,
-  clock:            Clock
-) extends DaoBase
-    with AlbumDao {
+class AlbumDaoImpl(implicit db: Database, executionContext: ExecutionContext, clock: Clock) extends DaoBase with AlbumDao {
 
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   lazy val albums = TableQuery[AlbumsTable]
-  lazy val songs  = TableQuery[SongsTable]
+  lazy val songs = TableQuery[SongsTable]
 
   private type AlbumsQuery = Query[AlbumsTable, Album, Seq]
 
@@ -90,7 +83,7 @@ class AlbumDaoImpl(
         case Some((album, _)) =>
           val albumSongs: List[Song] = rows.flatMap(_._2).toList
           Some(AlbumWithSongs(album, albumSongs))
-        case None             =>
+        case None =>
           None
       }
     }
@@ -98,17 +91,16 @@ class AlbumDaoImpl(
 
   override def create(albumToCreate: AlbumWithSongs): Future[AlbumWithSongs] = {
 
-    val createAlbumAction =
-      (albums.returning(albums) += albumToCreate.album).asTry map {
-        case Success(a: Album)         => a
-        case Failure(p: PSQLException) =>
-          if (DaoBase.isUniqueConstraintViolation(p))
-            throw AlbumAlreadyExistsException(p.getServerErrorMessage.getMessage)
-          else
-            throw p
-        case Failure(t: Throwable)     =>
-          throw t
-      }
+    val createAlbumAction = (albums.returning(albums) += albumToCreate.album).asTry map {
+      case Success(a: Album) => a
+      case Failure(p: PSQLException) =>
+        if (DaoBase.isUniqueConstraintViolation(p))
+          throw AlbumAlreadyExistsException(p.getServerErrorMessage.getMessage)
+        else
+          throw p
+      case Failure(t: Throwable) =>
+        throw t
+    }
 
     val createSongsAction =
       if (albumToCreate.songs.nonEmpty)
@@ -117,14 +109,13 @@ class AlbumDaoImpl(
         DBIO.successful(List.empty[Song])
 
     // A readable way to concatenate database actions
-    val create =
-      for {
-        _ <- createAlbumAction
-        _ <- createSongsAction
-      } yield ()
+    val create = for {
+      _ <- createAlbumAction
+      _ <- createSongsAction
+    } yield ()
 
     for {
-      _               <- db.run(create.transactionally)
+      _ <- db.run(create.transactionally)
       albumWithSongsO <- getWithSongs(albumToCreate.album.id)
     } yield albumWithSongsO match {
       case Some(albumCreated) => albumCreated
@@ -147,7 +138,8 @@ class AlbumDaoImpl(
         returning id, title, artists, genre, created_at, updated_at
          """.as[Album]
     db.run(
-      query.headOption
+      query
+        .headOption
     )
   }
 
@@ -162,7 +154,8 @@ class AlbumDaoImpl(
 
   // adding helper methods here with the return type of AlbumsQuery allows for readable chaining
   implicit class AlbumsQueries(val query: AlbumsQuery) {
-    def filterById(id: UUID): AlbumsQuery = query.filter(_.id === id)
+    def filterById(id: UUID): AlbumsQuery =
+      query.filter(_.id === id)
   }
 
   // when using plain SQL, we have to provide these `GetResult`s in order to convert between the result row

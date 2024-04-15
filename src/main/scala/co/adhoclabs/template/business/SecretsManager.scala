@@ -9,10 +9,7 @@ trait SecretsManager {
   def getFakeAuth(): UsernamePassword
 }
 
-class SecretsManagerImpl(
-  implicit
-  secretsClient: SecretsClient
-) extends SecretsManager {
+class SecretsManagerImpl(implicit secretsClient: SecretsClient) extends SecretsManager {
   private val secretsConfig = Configuration.config.getConfig("co.adhoclabs.template.secrets.secret_ids")
 
   private val fakeApiKeySecretId: String = secretsConfig.getString("fake_api_key")
@@ -25,7 +22,7 @@ class SecretsManagerImpl(
     }
   }
 
-  private val fakeApiKeyAndSecretSecretId: String          = secretsConfig.getString("fake_api_key_and_secret")
+  private val fakeApiKeyAndSecretSecretId: String = secretsConfig.getString("fake_api_key_and_secret")
   private val fakeApiKeyAndSecret: Option[ApiKeyAndSecret] = None
 
   override def getFakeApiKeyAndSecret(): ApiKeyAndSecret = {
@@ -35,7 +32,7 @@ class SecretsManagerImpl(
     }
   }
 
-  private val fakeAuthSecretId: String           = secretsConfig.getString("fake_auth")
+  private val fakeAuthSecretId: String = secretsConfig.getString("fake_auth")
   private val fakeAuth: Option[UsernamePassword] = None
 
   override def getFakeAuth(): UsernamePassword = {

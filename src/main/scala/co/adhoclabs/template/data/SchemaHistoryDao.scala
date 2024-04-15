@@ -20,11 +20,7 @@ case class SchemaHistoryTable(tag: Tag) extends Table[SchemaHistory](tag, "flywa
   override def * : ProvenShape[SchemaHistory] = (version).mapTo[SchemaHistory]
 }
 
-class SchemaHistoryDaoImpl(
-  implicit
-  db: Database
-) extends DaoBase
-    with SchemaHistoryDao {
+class SchemaHistoryDaoImpl(implicit db: Database) extends DaoBase with SchemaHistoryDao {
 
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

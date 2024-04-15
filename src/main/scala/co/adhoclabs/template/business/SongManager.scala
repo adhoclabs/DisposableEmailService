@@ -16,27 +16,21 @@ trait SongManager extends BusinessBase {
   def delete(id: UUID): Future[Unit]
 }
 
-class SongManagerImpl(
-  implicit
-  songDao:          SongDao,
-  clock:            Clock,
-  executionContext: ExecutionContext
-) extends SongManager {
+class SongManagerImpl(implicit songDao: SongDao, clock: Clock, executionContext: ExecutionContext) extends SongManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def get(id: UUID): Future[Option[Song]] = songDao.get(id)
 
   override def create(createSongRequest: CreateSongRequest): Future[Song] = {
     val now: Instant = clock.instant()
-    val song         =
-      Song(
-        id = UUID.randomUUID,
-        title = createSongRequest.title,
-        albumId = createSongRequest.albumId,
-        albumPosition = createSongRequest.albumPosition,
-        createdAt = now,
-        updatedAt = now
-      )
+    val song = Song(
+      id            = UUID.randomUUID,
+      title         = createSongRequest.title,
+      albumId       = createSongRequest.albumId,
+      albumPosition = createSongRequest.albumPosition,
+      createdAt     = now,
+      updatedAt     = now
+    )
     songDao.create(song)
   }
 

@@ -2,6 +2,7 @@ package co.adhoclabs.template.models
 
 import co.adhoclabs.model.BaseJsonProtocol
 import spray.json.RootJsonFormat
+import zio.schema.{DeriveSchema, Schema}
 
 import java.time.Instant
 import java.util.UUID
@@ -17,6 +18,7 @@ case class Song(
 
 object Song extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[Song] = jsonFormat6(Song.apply)
+  implicit val schema: Schema[Song] = DeriveSchema.gen
 }
 
 /*
@@ -37,7 +39,7 @@ object Song extends ((UUID, String, UUID, Int) => Song) {
     albumPosition = createSongRequest.albumPosition
   )
 }
- */
+*/
 
 case class CreateSongRequest(
   title:         String,
@@ -47,4 +49,5 @@ case class CreateSongRequest(
 
 object CreateSongRequest extends BaseJsonProtocol {
   implicit val jsonFormat: RootJsonFormat[CreateSongRequest] = jsonFormat3(CreateSongRequest.apply)
+  implicit val schema: Schema[CreateSongRequest] = DeriveSchema.gen
 }

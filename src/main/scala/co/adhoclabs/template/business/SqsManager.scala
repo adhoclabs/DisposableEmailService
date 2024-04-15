@@ -8,10 +8,7 @@ trait SqsManager extends BusinessBase {
   def sendFakeSqsEvent(payload: String): Unit
 }
 
-class SqsManagerImpl(
-  implicit
-  sqsClient: SqsClient
-) extends SqsManager {
+class SqsManagerImpl(implicit sqsClient: SqsClient) extends SqsManager {
   override protected val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   private val fakeQueueName: String = Configuration.sqsConfig.getString("fake_queue.queue_name")
@@ -20,3 +17,4 @@ class SqsManagerImpl(
     sqsClient.sendMessage(payload, fakeQueueName)
   }
 }
+
