@@ -11,14 +11,13 @@ import zio.http.{Body, Handler, Middleware, Response, RoutePattern, Routes, Stat
 case class ApiZ(
   implicit
   emailApiZ:   EmailRoutes,
-  songRoutes:  SongRoutes,
   healthRoute: HealthRoutes
 ) {
   val openApi =
     OpenAPIGen.fromEndpoints(
       title = "BurnerAlbums",
       version = "1.0",
-      SongApiEndpoints.endpoints ++ EmailEndpoints.endpoints ++ HealthEndpoint.endpoints
+      EmailEndpoints.endpoints ++ HealthEndpoint.endpoints
     )
 
   val docsRoute = SwaggerUI.routes("docs", openApi)
@@ -36,7 +35,7 @@ case class ApiZ(
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val zioRoutes =
-    (docsRoute ++ healthRoute.routes ++ emailApiZ.routes ++ songRoutes.routes ++ unhandled)
+    (docsRoute ++ healthRoute.routes ++ emailApiZ.routes ++ unhandled)
       .handleErrorCause { cause =>
         import Schemas.errorResponseSchema
         import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec

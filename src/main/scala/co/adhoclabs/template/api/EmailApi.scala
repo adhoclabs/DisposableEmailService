@@ -22,7 +22,7 @@ import zio.http.codec.Doc
 
 object EmailEndpoints {
   val submit =
-    Endpoint(Method.POST / "albums")
+    Endpoint(Method.POST / "emailMessages")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[BurnerEmailAddress]
       .out[BurnerEmailAddress](Status.Created)

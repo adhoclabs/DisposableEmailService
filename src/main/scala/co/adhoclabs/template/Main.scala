@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
 import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
 import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
-import co.adhoclabs.template.api.{EmailRoutes, ApiZ, HealthRoutes, SongRoutes}
+import co.adhoclabs.template.api.{EmailRoutes, ApiZ, HealthRoutes}
 import co.adhoclabs.template.business._
 import co.adhoclabs.template.data.SlickPostgresProfile.backend.Database
 import co.adhoclabs.template.data._
@@ -17,7 +17,6 @@ import scala.concurrent.ExecutionContext
 
 object MainZio extends ZIOAppDefault {
   import Dependencies._
-  implicit val songRoutes   = SongRoutes()
   implicit val healthRoutes = HealthRoutes()
   implicit val emailRoutes  = EmailRoutes()
 
