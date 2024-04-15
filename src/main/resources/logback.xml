@@ -7,9 +7,9 @@
 
     <!-- Affects slick logging -->
     <root level="info">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 
     <!-- Affects api logging -->
-    <logger name="co.adhoclabs.template" level="info" />
+    <logger name="co.adhoclabs.email" level="info"/>
 </configuration>

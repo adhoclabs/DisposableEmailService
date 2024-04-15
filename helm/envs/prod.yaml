@@ -5,7 +5,7 @@ image:
   tag: "@sha256:97934dfc33064115468dfc2c03c06cf514898dd8bea6a9ad5d206d6be73916f5"
 
 awsSettings:
-  iamRole: prod-TEMPLATE_SVC_BASE-service-sa
+  iamRole: prod-email-service-sa
   region: us-west-2
 
 datadog:
@@ -15,11 +15,11 @@ datadog:
 
 appSettings:
   javaOpts: "-javaagent:/opt/datadog/dd-agent.jar -Dconfig.file=/var/lib/gen_config/application_gen.conf -XX:+UseG1GC -Xms512m -Xmx1664m"
-  exampleSecretId: prod-TEMPLATE_SVC_BASE-secret-shhhh
+  exampleSecretId: prod-email-secret-shhhh
   replicas: 3
   db:
-    hostname: prod-TEMPLATE_SVC_BASE-rds
-    password: prod-TEMPLATE_SVC_BASE-db-password
+    hostname: prod-email-rds
+    password: prod-email-db-password
   resources:
     requests:
       cpu: "500m"
@@ -39,7 +39,7 @@ argoStrategy:
     maxSurge: "100%"
     maxUnavailable: "0"
     steps:
-    - setWeight: 10
-    - pause: { }
-    - setWeight: 50
-    - pause: { }
+      - setWeight: 10
+      - pause: { }
+      - setWeight: 50
+      - pause: { }

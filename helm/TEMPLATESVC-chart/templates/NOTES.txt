@@ -1,7 +1,0 @@
-You just deployed TEMPLATE_SVC_BASE-service {{ .Chart.Version }} revision {{ .Release.Revision }} to {{ .Values.cluster.namespace }}
-To monitor this rollout:
-    kubectl argo rollouts get rollout TEMPLATE_SVC_BASE-service -w
-To promote this rollout:
-    kubectl argo rollouts promote TEMPLATE_SVC_BASE-service
-To abort the rollout:
-    kubectl argo rollouts abort TEMPLATE_SVC_BASE-service

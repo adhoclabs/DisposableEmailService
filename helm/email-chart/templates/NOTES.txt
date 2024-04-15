@@ -1,0 +1,7 @@
+You just deployed email-service {{ .Chart.Version }} revision {{ .Release.Revision }} to {{ .Values.cluster.namespace }}
+To monitor this rollout:
+    kubectl argo rollouts get rollout email-service -w
+To promote this rollout:
+    kubectl argo rollouts promote email-service
+To abort the rollout:
+    kubectl argo rollouts abort email-service

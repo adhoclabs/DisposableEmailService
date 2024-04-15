@@ -8,7 +8,7 @@ image:
 
 appSettings:
   replicas: 2
-  secretsMgrKeyID: dev-TEMPLATE_SVC_BASE
+  secretsMgrKeyID: dev-email
   db:
-    hostname: dev-TEMPLATE_SVC_BASE-rds
-    password: dev-TEMPLATE_SVC_BASE-db-password
+    hostname: dev-email-rds
+    password: dev-email-db-password

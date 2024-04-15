@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  application_gen.conf: |
+    include "application"
+    akka.loglevel = "INFO"
+    akka.scheduler.tick-duration = "100ms"
+    co.adhoclabs.email.port ={{ .Values.appSettings.port }}
+kind: ConfigMap
+metadata:
+{{- if .Values.configMap.preserveOldReleases }}
+  annotations:
+    "helm.sh/resource-policy": keep
+{{- end }}
+  name: email-service-app-dot-conf-{{ include "email-chart.cm-suffix" . }}
+  namespace: {{ .Values.cluster.namespace }}
