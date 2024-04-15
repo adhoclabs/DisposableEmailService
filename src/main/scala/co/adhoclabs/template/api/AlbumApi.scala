@@ -42,7 +42,10 @@ object AlbumEndpoints {
     s"https://github.com/adhoclabs/${projectName}/blob/main/$filePath"
   }
 
-  final def openApiSrcLink(line: sourcecode.Line) = Doc.p(s"$githubLink#L${line.value}")
+  final def openApiSrcLink(line: sourcecode.Line) = {
+    // This is the best way I've found to get a clickable link
+    Doc.fromCommonMark(s"[Src]($githubLink#L${line.value})")
+  }
 
   val get =
     // TODO Return 404 when album with id not found
