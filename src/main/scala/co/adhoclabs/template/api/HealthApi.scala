@@ -6,10 +6,6 @@ import zio.http._
 import zio.http.endpoint.Endpoint
 
 object HealthEndpoint {
-  val okBoomer =
-    Endpoint(Method.GET / "health" / "boom")
-      .out[String]
-
   val api =
     Endpoint(Method.GET / "health" / "api")
       .out[String]
@@ -21,12 +17,14 @@ object HealthEndpoint {
   val endpoints =
     List(
       api,
-      db,
-      okBoomer
+      db
     )
 }
 
-case class HealthRoutes(implicit healthManager: HealthManager) {
+case class HealthRoutes(
+  implicit
+  healthManager: HealthManager
+) {
   val api =
     HealthEndpoint.api.implement {
       Handler.fromZIO {
@@ -37,20 +35,9 @@ case class HealthRoutes(implicit healthManager: HealthManager) {
   val db =
     HealthEndpoint.db.implement {
       Handler.fromZIO {
-        ZIO.fromFuture(
-          implicit ec =>
-            healthManager.executeDbGet()
-        ).map(_ => "DB is healthy!")
-          .orDie
+        ZIO.fromFuture(implicit ec => healthManager.executeDbGet()).map(_ => "DB is healthy!").orDie
       }
     }
 
-  val okBoomer =
-    HealthEndpoint.okBoomer.implement {
-      Handler.fromZIO {
-        ZIO.succeed(???)
-      } // .mapError(throwable => ErrorResponse(throwable.getMessage))
-    }
-
-  val routes = Routes(api, db, okBoomer)
+  val routes = Routes(api, db)
 }
