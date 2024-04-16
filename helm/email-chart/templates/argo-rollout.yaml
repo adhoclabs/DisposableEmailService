@@ -32,7 +32,7 @@ spec:
           ports:
             - containerPort: {{ .Values.nginxSettings.port }}
           resources:
-          {{- toYaml .Values.nginxSettings.resources | nindent 10 }}
+          {{- toYaml .Values.nginxSettings.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /etc/nginx/conf.d
               name: nginx-config
@@ -66,7 +66,7 @@ spec:
             failureThreshold: 3
             timeoutSeconds: 1
           resources:
-          {{- toYaml .Values.appSettings.resources | nindent 10 }}
+          {{- toYaml .Values.appSettings.resources | nindent 12 }}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
