@@ -2,7 +2,7 @@ cluster:
   namespace: dev
 
 image:
-  tag: "@sha256:97934dfc33064115468dfc2c03c06cf514898dd8bea6a9ad5d206d6be73916f5"
+  tag: ":0.0.1"
 
 # no awsSettings section since its all inherited from defaults in values.yaml
 
