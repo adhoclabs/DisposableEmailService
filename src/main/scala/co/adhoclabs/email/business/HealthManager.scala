@@ -5,15 +5,15 @@ import co.adhoclabs.email.data.SchemaHistoryDao
 import scala.concurrent.{ExecutionContext, Future}
 
 trait HealthManager {
-  def executeDbGet(): Future[Unit]
+//  def executeDbGet(): Future[Unit]
 }
 
 class HealthManagerImpl(
   implicit
-  schemaHistoryDao: SchemaHistoryDao,
+//  schemaHistoryDao: SchemaHistoryDao,
   executionContext: ExecutionContext
 ) extends HealthManager {
-  override def executeDbGet(): Future[Unit] = {
-    schemaHistoryDao.getLatest().map(_ => ())
-  }
+//  override def executeDbGet(): Future[Unit] = {
+//    schemaHistoryDao.getLatest().map(_ => ())
+//  }
 }

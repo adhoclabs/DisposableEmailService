@@ -55,40 +55,40 @@ object Dependencies {
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   // aws
-  private val awsConfig: Config = config.getConfig("co.adhoclabs.template.aws")
-  private val awsRegion: String = awsConfig.getString("region")
+//  private val awsConfig: Config = config.getConfig("co.adhoclabs.template.aws")
+//  private val awsRegion: String = awsConfig.getString("region")
 
   // sqs
-  private val queueNames: List[String]        =
-    List(
-      Configuration.sqsConfig.getString("fake_queue.queue_name")
-    )
-  private val queueMap: Map[String, SqsQueue] =
-    queueNames
-      .map(queueName =>
-        queueName -> SqsQueueWithInferredCredentials(
-          queueName = queueName,
-          regionName = awsRegion
-        )
-      )
-      .toMap
-  implicit val sqsClient: SqsClient           = new SqsClientImpl(queueMap)
-  implicit val sqsManager: SqsManager         = new SqsManagerImpl
+//  private val queueNames: List[String]        =
+//    List(
+//      Configuration.sqsConfig.getString("fake_queue.queue_name")
+//    )
+//  private val queueMap: Map[String, SqsQueue] =
+//    queueNames
+//      .map(queueName =>
+//        queueName -> SqsQueueWithInferredCredentials(
+//          queueName = queueName,
+//          regionName = awsRegion
+//        )
+//      )
+//      .toMap
+//  implicit val sqsClient: SqsClient           = new SqsClientImpl(queueMap)
+//  implicit val sqsManager: SqsManager         = new SqsManagerImpl
 
   // secrets
-  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(awsRegion)
-  implicit val secretsManager: SecretsManager       = new SecretsManagerImpl()
+//  private implicit val secretsClient: SecretsClient = new SecretsClientImpl(awsRegion)
+//  implicit val secretsManager: SecretsManager       = new SecretsManagerImpl()
 
   // database
-  private val dbConfigReference: String           = "co.adhoclabs.template.dbConfig"
-  implicit val db: Database                       = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)
-  implicit val schemaHistoryDao: SchemaHistoryDao = new SchemaHistoryDaoImpl
-  implicit val songDao: SongDao                   = new SongDaoImpl
-  implicit val albumDao: AlbumDao                 = new AlbumDaoImpl
+//  private val dbConfigReference: String           = "co.adhoclabs.template.dbConfig"
+//  implicit val db: Database                       = SlickPostgresProfile.backend.Database.forConfig(dbConfigReference, config)
+//  implicit val schemaHistoryDao: SchemaHistoryDao = new SchemaHistoryDaoImpl
+//  implicit val songDao: SongDao                   = new SongDaoImpl
+//  implicit val albumDao: AlbumDao                 = new AlbumDaoImpl
 
   // business
   implicit val healthManager: HealthManager = new HealthManagerImpl
-  implicit val songManager: SongManager     = new SongManagerImpl
+//  implicit val songManager: SongManager     = new SongManagerImpl
   implicit val emailManager: EmailManager   = new EmailManagerImpl
 
 }
