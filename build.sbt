@@ -51,3 +51,9 @@ logBuffered in Test := false
 //  case PathList("META-INF", _*) => MergeStrategy.discard
 //  case _ => MergeStrategy.first
 //}
+
+assemblyMergeStrategy in assembly := {
+  case PathList("reference.conf")          => MergeStrategy.concat
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case _                                   => MergeStrategy.first
+}
