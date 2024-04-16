@@ -9,11 +9,11 @@ import scala.concurrent.Future
 
 object HealthEndpoint {
   val api =
-    Endpoint(Method.GET / "health" / "api")
+    Endpoint(Method.GET / "email" / "health" / "api")
       .out[String]
 
   val db =
-    Endpoint(Method.GET / "health" / "db")
+    Endpoint(Method.GET / "email" / "health" / "db")
       .out[String]
 
   val endpoints =

@@ -42,7 +42,7 @@ object EmailEndpoints {
 
   val get =
     // TODO Return 404 when album with id not found
-    Endpoint(Method.GET / "emailMessage" / emailMessageidPathCodec("emailMessageId"))
+    Endpoint(Method.GET / "email" / "emailMessage" / emailMessageidPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[BurnerEmailMessage](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
@@ -51,7 +51,7 @@ object EmailEndpoints {
       )
 
   val submit =
-    Endpoint(Method.POST / "burnerEmailAddress")
+    Endpoint(Method.POST / "email" / "burnerEmailAddress")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[BurnerEmailAddress]
       .out[BurnerEmailAddress](Status.Created)
@@ -63,7 +63,7 @@ object EmailEndpoints {
 
   val delete =
     // TODO Return 404 when album with id not found?
-    Endpoint(Method.DELETE / "emailMessages" / emailMessageidPathCodec("emailMessageId"))
+    Endpoint(Method.DELETE / "email" / "emailMessages" / emailMessageidPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
