@@ -15,7 +15,7 @@ import zio.http.Server
 import java.time.Clock
 import scala.concurrent.ExecutionContext
 
-object MainZio extends ZIOAppDefault {
+object Main extends ZIOAppDefault {
   import Dependencies._
   implicit val healthRoutes = HealthRoutes()
   implicit val emailRoutes  = EmailRoutes()
