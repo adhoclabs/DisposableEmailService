@@ -13,4 +13,4 @@ COPY ./cicd/datadog/dd-agent.jar /opt/datadog/
 COPY ${JAR} /app/music-service.jar
 
 EXPOSE 9000
-CMD java ${JAVA_OPTS} -classpath /app/music-service.jar co.adhoclabs.microservice_template.Main
+CMD java ${JAVA_OPTS} -classpath /app/email-service.jar co.adhoclabs.email.Main

@@ -5,7 +5,7 @@ jobs:
 
   run_tests:
     docker:
-     - image: ahlops/scala-builder:2.0.4
+      - image: ahlops/scala-builder:2.0.4
     resource_class: medium
     working_directory: ~/repo
     steps:
@@ -64,7 +64,7 @@ jobs:
     resource_class: medium
     working_directory: ~/repo
     environment:
-      CONTAINER_NAME: microservice-template
+      CONTAINER_NAME: email-service
     steps:
       - checkout:
           path: ~/repo
@@ -100,7 +100,7 @@ jobs:
       - run:
           name: push container image to ECR
           command: |
-            export GIT_SHA=`cat .git/refs/heads/*`
+            export GIT_SHA=`git rev-parse --verify HEAD`
             aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${AWS_ECR_REGISTRY} \
             && docker tag ${CONTAINER_NAME}:latest ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${GIT_SHA} \
             && docker push ${AWS_ECR_REGISTRY}/${CONTAINER_NAME}:${GIT_SHA} \

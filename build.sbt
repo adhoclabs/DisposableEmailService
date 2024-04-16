@@ -1,6 +1,6 @@
 organization := "co.adhoclabs"
 
-name := "disposable-email-service"
+name := "email-service"
 
 version := "0.1"
 
