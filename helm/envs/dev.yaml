@@ -2,7 +2,7 @@ cluster:
   namespace: dev
 
 image:
-  tag: ":0.0.1-SNAPSHOT"
+  tag: ":0.0.1-2-SNAPSHOT"
 
 # no awsSettings section since its all inherited from defaults in values.yaml
 
