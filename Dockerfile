@@ -10,7 +10,7 @@ RUN mkdir -p /app /opt/datadog
 COPY ./cicd/datadog/dd-agent.jar /opt/datadog/
 
 # app
-COPY ${JAR} /app/music-service.jar
+COPY ${JAR} /app/email-service.jar
 
 EXPOSE 9000
 CMD java ${JAVA_OPTS} -classpath /app/email-service.jar co.adhoclabs.email.Main

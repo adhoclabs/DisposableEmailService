@@ -1,13 +1,7 @@
 package co.adhoclabs.email
 
-import akka.actor.ActorSystem
-import co.adhoclabs.secrets.{SecretsClient, SecretsClientImpl}
-import co.adhoclabs.sqs_client.{SqsClient, SqsClientImpl}
-import co.adhoclabs.sqs_client.queue.{SqsQueue, SqsQueueWithInferredCredentials}
 import co.adhoclabs.email.api.{EmailRoutes, ApiZ, HealthRoutes}
 import co.adhoclabs.email.business._
-import co.adhoclabs.email.data.SlickPostgresProfile.backend.Database
-import co.adhoclabs.email.data._
 import com.typesafe.config.{Config, ConfigFactory}
 import zio.{ZIO, ZIOAppDefault}
 import zio.http.Server
