@@ -4,8 +4,13 @@ import co.adhoclabs.email.models.BurnerEmailAddress
 import zio.{Ref, ZLayer}
 import zio.schema.{DeriveSchema, Schema}
 
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
+
+case class EmailFromLambda(
+  burnerEmailAddress: BurnerEmailAddress
+)
 
 case class UserId(
   id: UUID
@@ -26,6 +31,20 @@ object BurnerEmailMessageId {
 }
 
 case class BurnerEmailMessage(
+  id:                   BurnerEmailMessageId,
+  source:               String,
+  to:                   List[String],
+  from:                 List[String],
+//                  cc: List[String],
+//                  bcc: List[String],
+  subject:              String,
+//                  attachments: List[Attachment],
+  plainBodyDownloadUrl: Option[String],
+  htmlBodyDownloadUrl:  Option[String],
+  receivedAt:           Instant
+)
+
+case class BurnerEmailMessageOld(
   messageId: BurnerEmailMessageId,
   userId:    UserId,
   //  burnerId:     String,
