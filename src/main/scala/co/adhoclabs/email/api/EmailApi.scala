@@ -91,6 +91,10 @@ object EmailEndpoints {
       .out[BurnerEmailAddress](Status.Created)
       .outError[InternalErrorResponse](Status.InternalServerError)
       .outError[BadRequestResponse](Status.BadRequest)
+      .examplesIn(
+        "New email for existing user" ->
+          (goodUserId, BurnerEmailAddress("newFancyEmail@burnermail.me"))
+      )
 
   // TODO Why do we need this to be in this file, rather than just one more entry in the Schemas object?
   implicit val schema: Schema[EmptyResponse] = DeriveSchema.gen
@@ -119,7 +123,7 @@ case class EmailRoutes(
       Handler.fromFunctionZIO { case (userId: UserId, createAlbumRequest: BurnerEmailAddress) =>
         for {
           futureRes <-
-            ZIO.fromEither(emailManager.createBurnerEmailAddress(createAlbumRequest)).mapError {
+            emailManager.createBurnerEmailAddress(createAlbumRequest, userId).mapError {
               case conflict: String =>
                 Right(BadRequestResponse(conflict))
             }

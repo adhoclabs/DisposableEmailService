@@ -1,16 +1,12 @@
 package co.adhoclabs.email.business
 
 import co.adhoclabs.email.models.BurnerEmailAddress
-import zio.{Ref, ZLayer}
+import zio.{Ref, ZIO, ZLayer}
 import zio.schema.{DeriveSchema, Schema}
 
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
-
-case class EmailFromLambda(
-  burnerEmailAddress: BurnerEmailAddress
-)
 
 case class UserId(
   id: UUID
@@ -85,7 +81,10 @@ object BurnerEmailMessage   {
 }
 
 trait EmailManager {
-  def createBurnerEmailAddress(burnerEmail: BurnerEmailAddress): Either[String, BurnerEmailAddress]
+  def createBurnerEmailAddress(
+      burnerEmail: BurnerEmailAddress,
+      userId: UserId
+  ): ZIO[Any, String, BurnerEmailAddress]
   def getConversations(
       userId: String,
       burnerEmailO: Option[BurnerEmailAddress],
@@ -102,17 +101,37 @@ trait EmailManager {
   ): Future[Unit]
 }
 
-case class Inbox(burnerEmailAddress: BurnerEmailAddress, messages: List[BurnerEmailMessage])
+case class Inbox(emails: Map[BurnerEmailAddress, List[BurnerEmailMessage]]) {
+  def userIsUsingThisEmailAddress(burnerEmailAddress: BurnerEmailAddress) =
+    emails.contains(burnerEmailAddress)
+}
 
 case class EmailManagerImpl(
-  emails: Ref[Map[UserId, List[Inbox]]]
+  emails: Ref[Map[UserId, Inbox]]
 ) extends EmailManager {
 
   override def createBurnerEmailAddress(
-      burnerEmail: BurnerEmailAddress
-  ): Either[String, BurnerEmailAddress] = {
-    Right(burnerEmail)
-  }
+      burnerEmail: BurnerEmailAddress,
+      userId: UserId
+  ): ZIO[Any, String, BurnerEmailAddress] =
+    for {
+      existingInbox <-
+        emails.getAndUpdate { emails =>
+          val inbox        = emails.getOrElse(userId, Inbox(Map.empty))
+          val updatedInbox = inbox.copy(emails = inbox.emails + (burnerEmail -> List.empty))
+          emails + (userId -> updatedInbox)
+        } // .map(_.)
+      _             <-
+        existingInbox.get(userId) match {
+          case Some(value) =>
+            if (value.userIsUsingThisEmailAddress(burnerEmail)) {
+              ZIO.fail("User already using this email address")
+            } else {
+              ZIO.succeed(())
+            }
+          case None        => ZIO.fail("User not found")
+        }
+    } yield burnerEmail
 
   override def getConversations(
       userId: String,
@@ -127,9 +146,9 @@ case class EmailManagerImpl(
 }
 
 object EmailManager {
-  val layer = {
+  def layer(originalUserData: Map[UserId, Inbox]) = {
     ZLayer.fromZIO(
-      Ref.make(Map.empty[UserId, List[Inbox]]).map(EmailManagerImpl)
+      Ref.make(originalUserData).map(EmailManagerImpl)
     )
   }
 }

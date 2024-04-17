@@ -2,7 +2,7 @@ cluster:
   namespace: dev
 
 image:
-  tag: ":0.0.3"
+  tag: ":0.0.4"
 
 # no awsSettings section since its all inherited from defaults in values.yaml
 

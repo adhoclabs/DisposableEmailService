@@ -1,6 +1,6 @@
 package co.adhoclabs.email
 
-import co.adhoclabs.email.api.{ApiZ, EmailRoutes, HealthRoutes}
+import co.adhoclabs.email.api.{ApiZ, EmailEndpoints, EmailRoutes, HealthRoutes}
 import co.adhoclabs.email.business._
 import com.typesafe.config.{Config, ConfigFactory}
 import zio.{ZIO, ZIOAppDefault, ZLayer}
@@ -33,7 +33,7 @@ object Main extends ZIOAppDefault {
     } yield ()).provide(
       ApiZ.layer,
       EmailRoutes.layer,
-      EmailManager.layer,
+      EmailManager.layer(Map(EmailEndpoints.goodUserId -> Inbox(Map.empty))),
       ZLayer.succeed(HealthRoutes())
     )
 }
