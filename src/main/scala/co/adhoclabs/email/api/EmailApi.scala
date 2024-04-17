@@ -23,6 +23,10 @@ object EmailEndpoints {
 
   val githubLink = {
     val filePath = keepFilePath(file)
+    println(s"""
+        |file: + $file
+        |filePath:  + $filePath
+        |""".stripMargin)
     s"https://github.com/adhoclabs/${projectName}/blob/main/$filePath"
   }
 
