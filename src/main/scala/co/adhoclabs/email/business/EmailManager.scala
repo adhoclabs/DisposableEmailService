@@ -47,9 +47,21 @@ object BuiltInFormat {
     }
 }
 
+case class UserId(
+  id: UUID
+)
+
+object UserId extends DefaultJsonProtocol {
+  implicit val uuidFormat                         = BuiltInFormat.uuidJsonFormat
+  implicit val jsonFormat: RootJsonFormat[UserId] = jsonFormat1(UserId.apply)
+
+  implicit val schema: Schema[UserId] = DeriveSchema.gen
+}
+
 case class BurnerEmailMessageId(
   id: UUID
 )
+
 object BurnerEmailMessageId extends DefaultJsonProtocol {
   implicit val uuidFormat                                       = BuiltInFormat.uuidJsonFormat
   implicit val jsonFormat: RootJsonFormat[BurnerEmailMessageId] = jsonFormat1(BurnerEmailMessageId.apply)

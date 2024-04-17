@@ -16,7 +16,7 @@ import zio.http._
 import zio.http.endpoint.openapi.OpenAPIGen
 import zio.http.endpoint.Endpoint
 import Schemas._
-import co.adhoclabs.email.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager}
+import co.adhoclabs.email.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager, UserId}
 import co.adhoclabs.email.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException}
 import zio.http.codec.Doc
 
@@ -40,14 +40,22 @@ object EmailEndpoints {
 
   def emailMessageidPathCodec(name: String) = uuid(name).transform(BurnerEmailMessageId.apply)(_.id)
 
+  def userIdPathCodec(name: String) = uuid(name).transform(UserId.apply)(_.id)
+
   val get =
     // TODO Return 404 when album with id not found
-    Endpoint(Method.GET / "email" / "emailMessage" / emailMessageidPathCodec("emailMessageId"))
+    Endpoint(
+      Method.GET / "email" / "user" / userIdPathCodec("") / "emailMessage" / emailMessageidPathCodec(
+        "emailMessageId"
+      )
+    )
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[BurnerEmailMessage](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
       .examplesIn(
-        "Pre-existing Record" -> BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"))
+        "Pre-existing Record" ->
+          (UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479")),
+          BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")))
       )
 
   val submit =
@@ -104,7 +112,7 @@ case class EmailRoutes(
 
   val get =
     EmailEndpoints.get.implement {
-      Handler.fromFunctionZIO { (emailMessageId: BurnerEmailMessageId) =>
+      Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
         ZIO
           .fromOption[BurnerEmailMessage](None)
           .mapError(_ => new Exception("No email message with id: " + emailMessageId))
