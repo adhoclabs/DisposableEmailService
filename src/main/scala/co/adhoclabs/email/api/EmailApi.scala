@@ -31,13 +31,30 @@ object EmailEndpoints {
     Doc.fromCommonMark(s"[Src]($githubLink#L${line.value})")
   }
 
-  def emailMessageidPathCodec(name: String) = uuid(name).transform(BurnerEmailMessageId.apply)(_.id)
+  def emailMessageIdPathCodec(name: String) = uuid(name).transform(BurnerEmailMessageId.apply)(_.id)
 
   def userIdPathCodec(name: String) = uuid(name).transform(UserId.apply)(_.id)
 
+  val goodUserId = UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
+
+  val postMessage =
+    Endpoint(
+      Method.POST / "email"
+    )
+      .??(Doc.p("This just quietly accepts valid payloads. TODO save for relevant user, if exists."))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
+      .in[BurnerEmailMessage]
+      .out[BurnerEmailMessage](Status.Created)
+      .outError[ErrorResponse](Status.NotFound)
+      .examplesIn(
+        "Pre-existing Record" ->
+          BurnerEmailMessage
+            .create(goodUserId, BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")))
+      )
+
   val getMessage =
     Endpoint(
-      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages" / emailMessageidPathCodec(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages" / emailMessageIdPathCodec(
         "emailMessageId"
       )
     )
@@ -76,13 +93,14 @@ object EmailEndpoints {
 
   val delete =
     // TODO Return 404 when album with id not found?
-    Endpoint(Method.DELETE / "email" / "emailMessages" / emailMessageidPathCodec("emailMessageId"))
+    Endpoint(Method.DELETE / "email" / "emailMessages" / emailMessageIdPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
   val endpoints =
     List(
       submit,
+      postMessage,
       getMessage,
       getInbox,
       delete
@@ -106,38 +124,13 @@ case class EmailRoutes(
       }
     }
 
-  def createEmailMessage(userId: UserId, emailMessageId: BurnerEmailMessageId): BurnerEmailMessage = {
-    BurnerEmailMessage(
-      id = emailMessageId,
-      source = "source",
-      to =
-        List(
-          userId.toString
-        ),
-      from =
-        List(
-          "someExternalSender@mail.hardcoded"
-        ),
-      subject = "subject",
-      plainBodyDownloadUrl =
-        Some(
-          "https://dev-burner-email-parsed-prototype.s3.us-west-2.amazonaws.com/ec324f4f-b4fb-4fde-98ec-80cb472121f3/body.txt?X-Amz-Security-Token=FwoGZXIvYXdzELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDJhqGUy5G4n7%2BX4p0CKGAXPNIJAAB%2BVN5Vsq%2BVU5zbDyhHg1MsHI%2BYOigR%2Fh1Ai8wV%2BkwPYBktQsuBee8ADrO7zBb8pZt3dpe3gcqkcxarM%2Fx2zeYwMvRKgJYe1roSpKwW08Bbrq1ZC9ROaG%2BGK%2BqGbLWvoy%2FCQbLMgujgi8pW0ih6v3f%2FGG%2Bm3hiBVF5BgL755SHk%2BPKNPI%2F7AGMiiSLkjpBiEICkWQ4W%2BUOgGydI7yyjDKaUAGnjUROV9L8XwerJKFkftw&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240417T150155Z&X-Amz-SignedHeaders=host&X-Amz-Expires=604799&X-Amz-Credential=ASIA2MPTIHUQHLXSJ7GG%2F20240417%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=e22fa44b28ca7eb1a92e4a2030187419d600b52ee485e1a30528fbbc4e5ea2e9"
-        ),
-      htmlBodyDownloadUrl =
-        Some(
-          "https://dev-burner-email-parsed-prototype.s3.us-west-2.amazonaws.com/ec324f4f-b4fb-4fde-98ec-80cb472121f3/body.html?X-Amz-Security-Token=FwoGZXIvYXdzELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDJhqGUy5G4n7%2BX4p0CKGAXPNIJAAB%2BVN5Vsq%2BVU5zbDyhHg1MsHI%2BYOigR%2Fh1Ai8wV%2BkwPYBktQsuBee8ADrO7zBb8pZt3dpe3gcqkcxarM%2Fx2zeYwMvRKgJYe1roSpKwW08Bbrq1ZC9ROaG%2BGK%2BqGbLWvoy%2FCQbLMgujgi8pW0ih6v3f%2FGG%2Bm3hiBVF5BgL755SHk%2BPKNPI%2F7AGMiiSLkjpBiEICkWQ4W%2BUOgGydI7yyjDKaUAGnjUROV9L8XwerJKFkftw&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240417T150155Z&X-Amz-SignedHeaders=host&X-Amz-Expires=604799&X-Amz-Credential=ASIA2MPTIHUQHLXSJ7GG%2F20240417%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=7b059ce0d1ceb6ba98db0560f9d70b631da64b327e18b5b79dc062d424518483"
-        ),
-      receivedAt = Instant.now()
-    )
-  }
-
   val getMessage =
     EmailEndpoints.getMessage.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
         ZIO
           .fromOption[BurnerEmailMessage](
             Some(
-              createEmailMessage(userId, emailMessageId)
+              BurnerEmailMessage.create(userId, emailMessageId)
             )
           )
           .mapError(_ => new Exception("No email message with id: " + emailMessageId))
@@ -151,8 +144,8 @@ case class EmailRoutes(
         ZIO
           .succeed(
             List(
-              createEmailMessage(userId, BurnerEmailMessageId(UUID.randomUUID())),
-              createEmailMessage(userId, BurnerEmailMessageId(UUID.randomUUID()))
+              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
             )
           )
 //          .mapError(_ => new Exception("No user with id: " + userId))
@@ -170,12 +163,21 @@ case class EmailRoutes(
       }
     }
 
+  val postMessage =
+    EmailEndpoints.postMessage.implement {
+      Handler.fromFunctionZIO { (emailMessage: BurnerEmailMessage) =>
+        ZIO.succeed(emailMessage)
+      }
+
+    }
+
   val routes =
     Routes(
       submit,
       getMessage,
       getInbox,
-      delete
+      delete,
+      postMessage
     )
 }
 
