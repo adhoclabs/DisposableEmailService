@@ -55,7 +55,7 @@ object UserId extends DefaultJsonProtocol {
   implicit val uuidFormat                         = BuiltInFormat.uuidJsonFormat
   implicit val jsonFormat: RootJsonFormat[UserId] = jsonFormat1(UserId.apply)
 
-  implicit val schema: Schema[UserId] = DeriveSchema.gen
+  implicit val schema: Schema[UserId] = Schema.primitive[UUID].transform(UserId(_), _.id)
 }
 
 case class BurnerEmailMessageId(
@@ -66,12 +66,14 @@ object BurnerEmailMessageId extends DefaultJsonProtocol {
   implicit val uuidFormat                                       = BuiltInFormat.uuidJsonFormat
   implicit val jsonFormat: RootJsonFormat[BurnerEmailMessageId] = jsonFormat1(BurnerEmailMessageId.apply)
 
-  implicit val schema: Schema[BurnerEmailMessageId] = DeriveSchema.gen
+  implicit val schema: Schema[BurnerEmailMessageId] = {
+    Schema.primitive[UUID].transform(BurnerEmailMessageId(_), _.id)
+  }
 }
 
 case class BurnerEmailMessage(
   id:      BurnerEmailMessageId,
-  userId:  String,
+  userId:  UserId,
 //  burnerId:     String,
 //  conversation: Conversation,
 //  dateCreated:  Instant,
@@ -82,6 +84,7 @@ case class BurnerEmailMessage(
 )
 object BurnerEmailMessage   extends DefaultJsonProtocol {
   implicit val schema: Schema[BurnerEmailMessage] = DeriveSchema.gen
+
 }
 
 trait EmailManager {

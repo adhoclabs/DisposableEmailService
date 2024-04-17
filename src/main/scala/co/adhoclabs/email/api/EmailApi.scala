@@ -45,7 +45,7 @@ object EmailEndpoints {
   val get =
     // TODO Return 404 when album with id not found
     Endpoint(
-      Method.GET / "email" / "user" / userIdPathCodec("") / "emailMessage" / emailMessageidPathCodec(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessage" / emailMessageidPathCodec(
         "emailMessageId"
       )
     )
@@ -114,7 +114,16 @@ case class EmailRoutes(
     EmailEndpoints.get.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
         ZIO
-          .fromOption[BurnerEmailMessage](None)
+          .fromOption[BurnerEmailMessage](
+            Some(
+              BurnerEmailMessage(
+                emailMessageId,
+                userId,
+                "content",
+                "subject"
+              )
+            )
+          )
           .mapError(_ => new Exception("No email message with id: " + emailMessageId))
           .orDie
 //          .someOrFail(ErrorResponse("Could not find album!"))
