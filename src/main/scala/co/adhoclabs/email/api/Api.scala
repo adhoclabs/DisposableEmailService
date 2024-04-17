@@ -15,7 +15,7 @@ case class ApiZ(
 ) {
   val openApi =
     OpenAPIGen.fromEndpoints(
-      title = "BurnerAlbums",
+      title = "Burner Emails",
       version = "1.0",
       EmailEndpoints.endpoints ++ HealthEndpoint.endpoints
     )
@@ -80,77 +80,4 @@ case class ApiZ(
       }
       .mapErrorZIO(errResponse => ZIO.debug("ErrorResponse: " + errResponse).as(errResponse)) @@
       Middleware.requestLogging(statusCode => zio.LogLevel.Warning)
-  //    Middleware.debug
-
-  /*    Middleware.intercept {
-        (request, response) =>
-          println("Submit to datadog")
-          response
-      }
-   */
 }
-
-/*
-class ApiImpl(
-  implicit
-  actorSystem:      ActorSystem,
-  executionContext: ExecutionContext,
-) {
-
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
-  private def logRequestResponse(request: HttpRequest, response: HttpResponse): Unit = {
-    val timeout = 10.millis
-    for {
-      requestBodyAsBytes: ByteString <- request.entity.toStrict(timeout).map(_.data)
-      responseBodyAsByes: ByteString <- response.entity.toStrict(timeout).map(_.data)
-    } yield {
-      val requestBodyString: String = requestBodyAsBytes.utf8String
-      val responseBodyString: String = responseBodyAsByes.utf8String
-
-      logger.info(
-        (s"${response.status} " +
-          s"${request.method.name} " +
-          s"${request.uri} " +
-          s"REQUEST BODY: $requestBodyString " +
-          s"RESPONSE BODY: $responseBodyString").replace("\n", "")
-      )
-    }
-  }
-
-  private def logRequestRejection(request: HttpRequest, rejections: Seq[Rejection]): Unit = {
-    val timeout = 10.millis
-    request.entity.toStrict(timeout).map(_.data) map { requestBodyAsBytes: ByteString =>
-      logger.info(
-        (s"REJECTED: " +
-          s"${request.method.name} " +
-          s"${request.uri} " +
-          s"REQUEST BODY: ${requestBodyAsBytes.utf8String} " +
-          s"REJECTIONS: [${rejections.mkString(", ")}]").replace("\n", "")
-      )
-    }
-  }
-
-  protected def requestAndResponseLoggingHandler(request: HttpRequest): RouteResult => Unit = {
-    case Complete(response)   => logRequestResponse(request, response)
-    case Rejected(rejections) => logRequestRejection(request, rejections)
-  }
-
-  protected def logRequestException(exception: Exception): Unit =
-    logger.error("", exception)
-
-  protected val exceptionHandler: ExceptionHandler =
-    ExceptionHandler {
-      case validationException: ValidationException =>
-        logRequestException(validationException)
-        complete(StatusCodes.BadRequest -> validationException.errorResponse)
-      case unexpectedException: UnexpectedException =>
-        logRequestException(unexpectedException)
-        complete(StatusCodes.InternalServerError -> unexpectedException.errorResponse)
-      case exception: Exception =>
-        logRequestException(exception)
-        complete(StatusCodes.InternalServerError -> exception.getMessage)
-    }
-}
-
- */
