@@ -61,6 +61,7 @@ object EmailEndpoints {
     Endpoint(
       Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages"
     )
+      .??(Doc.p("Get all email messages for a user"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[List[BurnerEmailMessage]](Status.Ok)
       .outError[ErrorResponse](Status.NotFound)
@@ -70,7 +71,7 @@ object EmailEndpoints {
       )
 
   val submit =
-    Endpoint(Method.POST / "email" / "burnerEmailAddress")
+    Endpoint(Method.POST / "email" / "user" / userIdPathCodec("userId") / "emailAddress")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[BurnerEmailAddress]
       .out[BurnerEmailAddress](Status.Created)
@@ -101,7 +102,7 @@ case class EmailRoutes(
 ) {
   val submit =
     EmailEndpoints.submit.implement {
-      Handler.fromFunctionZIO { (createAlbumRequest: BurnerEmailAddress) =>
+      Handler.fromFunctionZIO { case (userId: UserId, createAlbumRequest: BurnerEmailAddress) =>
         for {
           futureRes <-
             ZIO.fromEither(emailManager.createBurnerEmailAddress(createAlbumRequest)).mapError {
