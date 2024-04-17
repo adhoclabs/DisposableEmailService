@@ -20,7 +20,7 @@ case class ApiZ(
       EmailEndpoints.endpoints ++ HealthEndpoint.endpoints
     )
 
-  val docsRoute = SwaggerUI.routes("docs", openApi)
+  val docsRoute = SwaggerUI.routes("emails/docs", openApi)
 
   val unhandled =
     Routes(
