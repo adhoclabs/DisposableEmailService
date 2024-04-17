@@ -64,7 +64,7 @@ object BurnerEmailMessage   {
       source = "source",
       to =
         List(
-          userId.toString
+          userId.id.toString
         ),
       from =
         List(
