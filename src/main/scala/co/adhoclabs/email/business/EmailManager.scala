@@ -70,20 +70,17 @@ object BurnerEmailMessageId extends DefaultJsonProtocol {
 }
 
 case class BurnerEmailMessage(
-  id:           BurnerEmailMessageId,
-  userId:       String,
-  burnerId:     String,
-  conversation: Conversation,
-  dateCreated:  Instant,
-  read:         Boolean,
-  sid:          Option[String],
-  content:      String,
-  subject:      String
+  id:      BurnerEmailMessageId,
+  userId:  String,
+//  burnerId:     String,
+//  conversation: Conversation,
+//  dateCreated:  Instant,
+//  read:         Boolean,
+//  sid:          Option[String],
+  content: String,
+  subject: String
 )
 object BurnerEmailMessage   extends DefaultJsonProtocol {
-  implicit val instantJsonFormat                              = BuiltInFormat.instantJsonFormat
-  implicit val jsonFormat: RootJsonFormat[BurnerEmailMessage] = jsonFormat9(BurnerEmailMessage.apply)
-
   implicit val schema: Schema[BurnerEmailMessage] = DeriveSchema.gen
 }
 
