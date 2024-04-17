@@ -1,24 +1,16 @@
 package co.adhoclabs.email.api
 
-import java.util.UUID
-import co.adhoclabs.model.{Burner, EmptyResponse, ErrorResponse}
-import co.adhoclabs.email.models.{
-  Album,
-  AlbumWithSongs,
-  BurnerEmailAddress,
-  CreateAlbumRequest,
-  Genre,
-  PatchAlbumRequest
-}
-import zio.schema.{DeriveSchema, Schema}
+import co.adhoclabs.email.api.Schemas._
+import co.adhoclabs.email.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager, UserId}
+import co.adhoclabs.email.models.BurnerEmailAddress
+import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 import zio._
 import zio.http._
-import zio.http.endpoint.openapi.OpenAPIGen
-import zio.http.endpoint.Endpoint
-import Schemas._
-import co.adhoclabs.email.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager, UserId}
-import co.adhoclabs.email.exceptions.{AlbumAlreadyExistsException, NoSongsInAlbumException}
 import zio.http.codec.Doc
+import zio.http.endpoint.Endpoint
+import zio.schema.{DeriveSchema, Schema}
+
+import java.util.UUID
 
 object EmailEndpoints {
   val file                                = implicitly[sourcecode.File]
@@ -97,7 +89,6 @@ object EmailEndpoints {
 }
 
 case class EmailRoutes(
-  implicit
   emailManager: EmailManager
 ) {
   val submit =
@@ -169,4 +160,8 @@ case class EmailRoutes(
       getInbox,
       delete
     )
+}
+
+object EmailRoutes {
+  val layer: ZLayer[EmailManager, Nothing, EmailRoutes] = ZLayer.fromFunction(EmailRoutes.apply _)
 }

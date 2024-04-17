@@ -1,9 +1,9 @@
 package co.adhoclabs.email
 
-import co.adhoclabs.email.api.{EmailRoutes, ApiZ, HealthRoutes}
+import co.adhoclabs.email.api.{ApiZ, EmailRoutes, HealthRoutes}
 import co.adhoclabs.email.business._
 import com.typesafe.config.{Config, ConfigFactory}
-import zio.{ZIO, ZIOAppDefault}
+import zio.{ZIO, ZIOAppDefault, ZLayer}
 import zio.http.Server
 
 import java.time.Clock
@@ -12,32 +12,30 @@ import scala.concurrent.ExecutionContext
 object Main extends ZIOAppDefault {
   import Dependencies._
   implicit val healthRoutes = HealthRoutes()
-  implicit val emailRoutes  = EmailRoutes()
+//  implicit val emailRoutes  = EmailRoutes()
 
-  val app    = ApiZ().zioRoutes.toHttpApp
+//  val app    = ApiZ().zioRoutes.toHttpApp
   val config = Dependencies.config
   val host   = config.getString("co.adhoclabs.template.host")
   val port   = config.getInt("co.adhoclabs.template.port")
-  def run    = {
-    ZIO.debug("Starting") *>
-      Server
-        .serve(app)
-        .provide(Server.defaultWith(config => config.binding(hostname = host, port = port)))
-        .exitCode
-    /*
-    TODO Can we replicate this exactly?
-    Akka startup output:
+  def run    =
+    (for {
+      _   <- ZIO.debug("Starting")
+      api <- ZIO.service[ApiZ]
+      _   <-
+        Server
+          .serve(api.zioRoutes.toHttpApp)
+          .provide(
+            Server.defaultWith(config => config.binding(hostname = host, port = port))
+          )
+          .exitCode
 
-      bindingFuture.onComplete {
-        case Success(serverBinding) =>
-          println("Starting Template with:")
-          println(s"- JAVA_OPTS: ${scala.util.Properties.envOrElse("JAVA_OPTS", "<EMPTY>")}")
-          println(s"Listening to ${serverBinding.localAddress}")
-        case Failure(error) =>
-          println(s"error: ${error.getMessage}")
-      }
-     */
-  }
+    } yield ()).provide(
+      ApiZ.layer,
+      EmailRoutes.layer,
+      EmailManager.layer,
+      ZLayer.succeed(HealthRoutes())
+    )
 }
 
 object Dependencies {
@@ -83,7 +81,7 @@ object Dependencies {
   // business
   implicit val healthManager: HealthManager = new HealthManagerImpl
 //  implicit val songManager: SongManager     = new SongManagerImpl
-  implicit val emailManager: EmailManager   = new EmailManagerImpl
+//  implicit val emailManager: EmailManager   = new EmailManagerImpl
 
 }
 

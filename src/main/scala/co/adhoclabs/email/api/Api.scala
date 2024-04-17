@@ -4,12 +4,11 @@ import co.adhoclabs.model.ErrorResponse
 import co.adhoclabs.email.exceptions.{UnexpectedException, ValidationException}
 import org.slf4j.{Logger, LoggerFactory}
 import zio.http.endpoint.Endpoint
-import zio.{Cause, ZIO}
+import zio.{Cause, ZIO, ZLayer}
 import zio.http.endpoint.openapi.{OpenAPIGen, SwaggerUI}
 import zio.http.{Body, Handler, Middleware, Response, RoutePattern, Routes, Status}
 
 case class ApiZ(
-  implicit
   emailApiZ:   EmailRoutes,
   healthRoute: HealthRoutes
 ) {
@@ -80,4 +79,8 @@ case class ApiZ(
       }
       .mapErrorZIO(errResponse => ZIO.debug("ErrorResponse: " + errResponse).as(errResponse)) @@
       Middleware.requestLogging(statusCode => zio.LogLevel.Warning)
+}
+
+object ApiZ {
+  val layer: ZLayer[EmailRoutes with HealthRoutes, Nothing, ApiZ] = ZLayer.fromFunction(ApiZ.apply _)
 }

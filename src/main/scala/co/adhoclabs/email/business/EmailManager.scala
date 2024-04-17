@@ -1,6 +1,7 @@
 package co.adhoclabs.email.business
 
 import co.adhoclabs.email.models.BurnerEmailAddress
+import zio.{Ref, ZLayer}
 import zio.schema.{DeriveSchema, Schema}
 
 import java.util.UUID
@@ -58,7 +59,11 @@ trait EmailManager {
   ): Future[Unit]
 }
 
-case class EmailManagerImpl() extends EmailManager {
+case class Inbox(burnerEmailAddress: BurnerEmailAddress, messages: List[BurnerEmailMessage])
+
+case class EmailManagerImpl(
+  emails: Ref[Map[UserId, List[Inbox]]]
+) extends EmailManager {
 
   override def createBurnerEmailAddress(
       burnerEmail: BurnerEmailAddress
@@ -76,4 +81,12 @@ case class EmailManagerImpl() extends EmailManager {
   override def deleteMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
 
   override def archiveMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
+}
+
+object EmailManager {
+  val layer = {
+    ZLayer.fromZIO(
+      Ref.make(Map.empty[UserId, List[Inbox]]).map(EmailManagerImpl)
+    )
+  }
 }
