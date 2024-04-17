@@ -107,8 +107,11 @@ trait EmailManager {
 
 case class EmailManagerImpl() extends EmailManager {
 
-  override def createBurnerEmailAddress(burnerEmail: BurnerEmailAddress): Either[String, BurnerEmailAddress] =
-    ???
+  override def createBurnerEmailAddress(
+      burnerEmail: BurnerEmailAddress
+  ): Either[String, BurnerEmailAddress] = {
+    Right(burnerEmail)
+  }
 
   override def getConversations(
       userId: String,

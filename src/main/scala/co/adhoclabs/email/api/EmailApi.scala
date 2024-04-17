@@ -42,10 +42,9 @@ object EmailEndpoints {
 
   def userIdPathCodec(name: String) = uuid(name).transform(UserId.apply)(_.id)
 
-  val get =
-    // TODO Return 404 when album with id not found
+  val getMessage =
     Endpoint(
-      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessage" / emailMessageidPathCodec(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages" / emailMessageidPathCodec(
         "emailMessageId"
       )
     )
@@ -56,6 +55,18 @@ object EmailEndpoints {
         "Pre-existing Record" ->
           (UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479")),
           BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")))
+      )
+
+  val getInbox =
+    Endpoint(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages"
+    )
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
+      .out[List[BurnerEmailMessage]](Status.Ok)
+      .outError[ErrorResponse](Status.NotFound)
+      .examplesIn(
+        "Pre-existing Record" ->
+          UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
 
   val submit =
@@ -75,19 +86,11 @@ object EmailEndpoints {
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
-  val openAPI =
-    OpenAPIGen.fromEndpoints(
-      title = "BurnerAlbums",
-      version = "1.0",
-      submit,
-      get,
-      delete
-    )
-
   val endpoints =
     List(
       submit,
-      get,
+      getMessage,
+      getInbox,
       delete
     )
 }
@@ -110,23 +113,41 @@ case class EmailRoutes(
       }
     }
 
-  val get =
-    EmailEndpoints.get.implement {
+  def createEmailMessage(userId: UserId, emailMessageId: BurnerEmailMessageId): BurnerEmailMessage = {
+    BurnerEmailMessage(
+      emailMessageId,
+      userId,
+      "content",
+      "subject"
+    )
+  }
+
+  val getMessage =
+    EmailEndpoints.getMessage.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
         ZIO
           .fromOption[BurnerEmailMessage](
             Some(
-              BurnerEmailMessage(
-                emailMessageId,
-                userId,
-                "content",
-                "subject"
-              )
+              createEmailMessage(userId, emailMessageId)
             )
           )
           .mapError(_ => new Exception("No email message with id: " + emailMessageId))
           .orDie
-//          .someOrFail(ErrorResponse("Could not find album!"))
+      }
+    }
+
+  val getInbox =
+    EmailEndpoints.getInbox.implement {
+      Handler.fromFunctionZIO { case (userId: UserId) =>
+        ZIO
+          .succeed(
+            List(
+              createEmailMessage(userId, BurnerEmailMessageId(UUID.randomUUID())),
+              createEmailMessage(userId, BurnerEmailMessageId(UUID.randomUUID()))
+            )
+          )
+//          .mapError(_ => new Exception("No user with id: " + userId))
+//          .orDie
       }
     }
 
@@ -143,7 +164,8 @@ case class EmailRoutes(
   val routes =
     Routes(
       submit,
-      get,
+      getMessage,
+      getInbox,
       delete
     )
 }
