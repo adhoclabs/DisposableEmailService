@@ -149,20 +149,14 @@ case class EmailRoutes(
   val getMessage =
     EmailEndpoints.getMessage.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
-        (
-          for {
-            result  <-
-              ZIO
-                .fromOption[BurnerEmailMessage](
-                  Some(
-                    BurnerEmailMessage.create(userId, emailMessageId)
-                  )
-                )
-                .mapError(_ => new Exception("No email message with id: " + emailMessageId))
-                .orDie
-            preview <- getPreview(result.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
-          } yield result.copy(preview = Some(preview))
-        ).provide(Client.default, Scope.default).orDie
+        ZIO
+          .fromOption[BurnerEmailMessage](
+            Some(
+              BurnerEmailMessage.create(userId, emailMessageId)
+            )
+          )
+          .mapError(_ => new Exception("No email message with id: " + emailMessageId))
+          .orDie
       }
     }
 
@@ -176,7 +170,7 @@ case class EmailRoutes(
     EmailEndpoints.getInbox.implement {
       Handler.fromFunctionZIO { case (userId: UserId) =>
         ZIO
-          .succeed(
+          .foreach(
             List(
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
@@ -184,9 +178,13 @@ case class EmailRoutes(
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
             )
+          )(message =>
+            (for {
+              preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
+            } yield message.copy(preview = Some(preview)))
           )
-//          .mapError(_ => new Exception("No user with id: " + userId))
-//          .orDie
+          .provide(Client.default, Scope.default)
+          .orDie
       }
     }
 
