@@ -7,6 +7,7 @@ import zio.schema.{DeriveSchema, Schema}
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
+import scala.util.Random
 
 case class UserId(
   id: UUID
@@ -37,7 +38,8 @@ case class BurnerEmailMessage(
 //                  attachments: List[Attachment],
   plainBodyDownloadUrl: Option[String],
   htmlBodyDownloadUrl:  Option[String],
-  receivedAt:           Instant
+  receivedAt:           Instant,
+  read:                 Boolean
 )
 
 case class BurnerEmailMessageOld(
@@ -75,7 +77,8 @@ object BurnerEmailMessage   {
         Some(
           "https://dev-burner-email-parsed-prototype.s3.us-west-2.amazonaws.com/ec324f4f-b4fb-4fde-98ec-80cb472121f3/body.html?X-Amz-Security-Token=FwoGZXIvYXdzELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDJhqGUy5G4n7%2BX4p0CKGAXPNIJAAB%2BVN5Vsq%2BVU5zbDyhHg1MsHI%2BYOigR%2Fh1Ai8wV%2BkwPYBktQsuBee8ADrO7zBb8pZt3dpe3gcqkcxarM%2Fx2zeYwMvRKgJYe1roSpKwW08Bbrq1ZC9ROaG%2BGK%2BqGbLWvoy%2FCQbLMgujgi8pW0ih6v3f%2FGG%2Bm3hiBVF5BgL755SHk%2BPKNPI%2F7AGMiiSLkjpBiEICkWQ4W%2BUOgGydI7yyjDKaUAGnjUROV9L8XwerJKFkftw&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20240417T150155Z&X-Amz-SignedHeaders=host&X-Amz-Expires=604799&X-Amz-Credential=ASIA2MPTIHUQHLXSJ7GG%2F20240417%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=7b059ce0d1ceb6ba98db0560f9d70b631da64b327e18b5b79dc062d424518483"
         ),
-      receivedAt = Instant.now()
+      receivedAt = Instant.now(),
+      read = Random.nextBoolean()
     )
   }
 }

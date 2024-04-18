@@ -153,6 +153,9 @@ case class EmailRoutes(
           .succeed(
             List(
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
               BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
             )
           )
