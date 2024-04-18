@@ -56,8 +56,8 @@ case class BurnerEmailMessage(
   plainBodyDownloadUrl: Option[String],
   htmlBodyDownloadUrl:  Option[String],
   receivedAt:           Instant,
-  read:                 Boolean,
-  preview:              Option[String]
+  read:                 Boolean = false,
+  preview:              Option[String] = None
 )
 
 object BurnerEmailMessageOutput {
