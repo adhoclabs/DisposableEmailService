@@ -1,7 +1,8 @@
 package co.adhoclabs.email.business
 
 import co.adhoclabs.email.models.BurnerEmailAddress
-import zio.{Ref, ZIO, ZLayer}
+import zio.http.{Client, Request}
+import zio.{Ref, Scope, ZIO, ZLayer}
 import zio.schema.{DeriveSchema, Schema}
 
 import java.time.Instant
@@ -27,6 +28,22 @@ object BurnerEmailMessageId {
   }
 }
 
+case class BurnerEmailMessageOutput(
+  id:                   BurnerEmailMessageId,
+  source:               String,
+  to:                   List[String],
+  from:                 List[String],
+  //                  cc: List[String],
+  //                  bcc: List[String],
+  subject:              String,
+  //                  attachments: List[Attachment],
+  plainBodyDownloadUrl: Option[String],
+  htmlBodyDownloadUrl:  Option[String],
+  receivedAt:           Long,
+  read:                 Boolean,
+  preview:              Option[String]
+)
+
 case class BurnerEmailMessage(
   id:                   BurnerEmailMessageId,
   source:               String,
@@ -43,6 +60,23 @@ case class BurnerEmailMessage(
   preview:              Option[String]
 )
 
+object BurnerEmailMessageOutput {
+  implicit val schema: Schema[BurnerEmailMessageOutput]                              = DeriveSchema.gen
+  def fromOriginal(burnerEmailMessage: BurnerEmailMessage): BurnerEmailMessageOutput =
+    BurnerEmailMessageOutput(
+      id = burnerEmailMessage.id,
+      source = burnerEmailMessage.source,
+      to = burnerEmailMessage.to,
+      from = burnerEmailMessage.from,
+      subject = burnerEmailMessage.subject,
+      plainBodyDownloadUrl = burnerEmailMessage.plainBodyDownloadUrl,
+      htmlBodyDownloadUrl = burnerEmailMessage.htmlBodyDownloadUrl,
+      receivedAt = burnerEmailMessage.receivedAt.toEpochMilli,
+      read = burnerEmailMessage.read,
+      preview = burnerEmailMessage.preview
+    )
+}
+
 case class BurnerEmailMessageOld(
   messageId: BurnerEmailMessageId,
   userId:    UserId,
@@ -54,7 +88,7 @@ case class BurnerEmailMessageOld(
   content:   String,
   subject:   String
 )
-object BurnerEmailMessage   {
+object BurnerEmailMessage       {
   implicit val schema: Schema[BurnerEmailMessage] = DeriveSchema.gen
 
   def create(userId: UserId, emailMessageId: BurnerEmailMessageId): BurnerEmailMessage = {
@@ -86,16 +120,20 @@ object BurnerEmailMessage   {
 }
 
 trait EmailManager {
+  def getEmailAddresses(
+      userId: UserId
+  ): ZIO[Any, String, List[BurnerEmailAddress]]
+  def getInbox(
+      userId: UserId,
+      burnerEmailAddress: BurnerEmailAddress
+  ): ZIO[Any, String, List[BurnerEmailMessageOutput]]
+  def getInbox(
+      userId: UserId
+  ): ZIO[Any, String, List[BurnerEmailMessageOutput]]
   def createBurnerEmailAddress(
       burnerEmail: BurnerEmailAddress,
       userId: UserId
   ): ZIO[Any, String, BurnerEmailAddress]
-  def getConversations(
-      userId: String,
-      burnerEmailO: Option[BurnerEmailAddress],
-      pageO: Option[Int],
-      pageSizeO: Option[Int]
-  ): Future[List[BurnerEmailMessage]]
 
   def deleteMessage(
       messageId: BurnerEmailMessageId
@@ -106,44 +144,84 @@ trait EmailManager {
   ): Future[Unit]
 }
 
-case class Inbox(emails: Map[BurnerEmailAddress, List[BurnerEmailMessage]]) {
+case class Inbox(emails: List[BurnerEmailMessage]) {
   def userIsUsingThisEmailAddress(burnerEmailAddress: BurnerEmailAddress) =
     emails.contains(burnerEmailAddress)
 }
 
 case class EmailManagerImpl(
-  emails: Ref[Map[UserId, Inbox]]
+  emails:         Ref[Map[BurnerEmailAddress, Inbox]],
+  emailAddresses: Ref[Map[UserId, List[BurnerEmailAddress]]]
 ) extends EmailManager {
+
+  def getInbox(
+      userId: UserId,
+      burnerEmailAddress: BurnerEmailAddress
+  ): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
+    ???
+  }
+
+  def getInbox(userId: UserId): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
+    ZIO
+      .foreach(
+        List(
+          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
+          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
+        )
+      )(message =>
+        (for {
+          preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
+        } yield message.copy(preview = Some(preview)))
+      )
+      .map(messages => messages.map(BurnerEmailMessageOutput.fromOriginal))
+//      .map(Inbox(_))
+      .provide(Client.default, Scope.default)
+      .orDie
+//    emails.get.map(_.getOrElse(userId, Inbox(Map.empty)))
+  }
+
+  def getPreview(url: String) =
+    for {
+      plainText <- Client.request(Request.get(url))
+      body      <- plainText.body.asString
+    } yield body.take(100)
+
+  def getEmailAddresses(
+      userId: UserId
+  ): ZIO[Any, String, List[BurnerEmailAddress]] = emailAddresses.get.map(_.getOrElse(userId, List.empty))
 
   override def createBurnerEmailAddress(
       burnerEmail: BurnerEmailAddress,
       userId: UserId
   ): ZIO[Any, String, BurnerEmailAddress] =
     for {
-      existingInbox <-
-        emails.getAndUpdate { emails =>
-          val inbox        = emails.getOrElse(userId, Inbox(Map.empty))
-          val updatedInbox = inbox.copy(emails = inbox.emails + (burnerEmail -> List.empty))
-          emails + (userId -> updatedInbox)
-        } // .map(_.)
-      _             <-
-        existingInbox.get(userId) match {
+      existingEmailAddresses <-
+        emailAddresses.getAndUpdate(addresses =>
+          addresses.get(userId) match {
+            case Some(userEmails) =>
+              if (userEmails.contains(burnerEmail)) {
+                addresses
+//                ZIO.fail("User this email.")
+              } else
+                addresses + (userId -> (List(burnerEmail) ++ userEmails))
+            //              ZIO.fail("User already has an email address. Must burn it before making a new one.")
+            case None             =>
+              addresses + (userId -> List(burnerEmail))
+          }
+        )
+      _                      <-
+        existingEmailAddresses.get(userId) match {
           case Some(value) =>
-            if (value.userIsUsingThisEmailAddress(burnerEmail)) {
-              ZIO.fail("User already using this email address")
-            } else {
-              ZIO.succeed(())
-            }
-          case None        => ZIO.fail("User not found")
+            if (value.contains(burnerEmail))
+              ZIO.fail(s"User already has this burner email: $burnerEmail")
+            else
+              ZIO.unit
+          case None        => ZIO.unit
         }
     } yield burnerEmail
-
-  override def getConversations(
-      userId: String,
-      burnerEmailO: Option[BurnerEmailAddress],
-      pageO: Option[Int],
-      pageSizeO: Option[Int]
-  ): Future[List[BurnerEmailMessage]] = ???
 
   override def deleteMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
 
@@ -151,9 +229,16 @@ case class EmailManagerImpl(
 }
 
 object EmailManager {
-  def layer(originalUserData: Map[UserId, Inbox]) = {
+  def layer(
+      originalUserData: Map[BurnerEmailAddress, Inbox],
+      originalUserEmails: Map[UserId, List[BurnerEmailAddress]]
+  ) = {
     ZLayer.fromZIO(
-      Ref.make(originalUserData).map(EmailManagerImpl)
+      for {
+        originalUserData <- Ref.make(originalUserData)
+        emailAddress     <- Ref.make(originalUserEmails)
+
+      } yield EmailManagerImpl(originalUserData, emailAddress)
     )
   }
 }

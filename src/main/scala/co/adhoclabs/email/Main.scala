@@ -33,7 +33,11 @@ object Main extends ZIOAppDefault {
     } yield ()).provide(
       ApiZ.layer,
       EmailRoutes.layer,
-      EmailManager.layer(Map(EmailEndpoints.goodUserId -> Inbox(Map.empty))),
+      EmailManager.layer(
+//        Map(EmailEndpoints.goodUserId -> Inbox(List.empty)),
+        Map.empty,
+        Map.empty
+      ), // TODO Give a starting email?
       ZLayer.succeed(HealthRoutes())
     )
 }

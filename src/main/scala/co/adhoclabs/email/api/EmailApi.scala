@@ -1,7 +1,13 @@
 package co.adhoclabs.email.api
 
 import co.adhoclabs.email.api.Schemas._
-import co.adhoclabs.email.business.{BurnerEmailMessage, BurnerEmailMessageId, EmailManager, UserId}
+import co.adhoclabs.email.business.{
+  BurnerEmailMessage,
+  BurnerEmailMessageId,
+  BurnerEmailMessageOutput,
+  EmailManager,
+  UserId
+}
 import co.adhoclabs.email.models.BurnerEmailAddress
 import co.adhoclabs.model.{EmptyResponse, ErrorResponse}
 import zio._
@@ -77,8 +83,9 @@ object EmailEndpoints {
     )
       .??(Doc.p("Get all email messages for a user"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .out[List[BurnerEmailMessage]](Status.Ok)
-      .outError[ErrorResponse](Status.NotFound)
+      .out[List[BurnerEmailMessageOutput]](Status.Ok)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
       .examplesIn(
         "Pre-existing Record" ->
           UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
@@ -91,7 +98,8 @@ object EmailEndpoints {
       .??(Doc.p("Get all email messages for a user"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[List[BurnerEmailAddress]](Status.Ok)
-      .outError[ErrorResponse](Status.NotFound)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
       .examplesIn(
         "Pre-existing Record" ->
           UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
@@ -160,44 +168,17 @@ case class EmailRoutes(
       }
     }
 
-  def getPreview(url: String) =
-    for {
-      plainText <- Client.request(Request.get(url))
-      body      <- plainText.body.asString
-    } yield body.take(100)
-
   val getInbox =
     EmailEndpoints.getInbox.implement {
       Handler.fromFunctionZIO { case (userId: UserId) =>
-        ZIO
-          .foreach(
-            List(
-              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-              BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
-            )
-          )(message =>
-            (for {
-              preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
-            } yield message.copy(preview = Some(preview)))
-          )
-          .provide(Client.default, Scope.default)
-          .orDie
+        emailManager.getInbox(userId).mapError(s => Right(BadRequestResponse(s)))
       }
     }
 
   val getEmailAddresses =
     EmailEndpoints.getEmailAddresses.implement {
       Handler.fromFunctionZIO { case (userId: UserId) =>
-        ZIO.succeed(
-          List(
-            BurnerEmailAddress(s"email1-$userId@burnermail.me"),
-            BurnerEmailAddress(s"email2-$userId@burnermail.me"),
-            BurnerEmailAddress(s"email3-$userId@burnermail.me")
-          )
-        )
+        emailManager.getEmailAddresses(userId).mapError(s => Right(BadRequestResponse(s)))
       }
     }
 
