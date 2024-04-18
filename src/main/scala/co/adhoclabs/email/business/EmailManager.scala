@@ -181,7 +181,7 @@ case class EmailManagerImpl(
             .orDie
         }
 
-    } yield emailsWithoutPreviews
+    } yield emailsWithPreviews
 
   def getInbox(userId: UserId): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
     for {
@@ -245,12 +245,15 @@ case class EmailManagerImpl(
           case List(oneRecipient) => ZIO.succeed(oneRecipient)
           case other              => ZIO.fail("Only one recipient allowed.")
         }
+      _         <- ZIO.debug("Recipient: " + recipient)
       _         <-
         emails.update(emails =>
           emails.get(recipient) match {
             case Some(inbox) =>
+              println("Should be updating inbox and adding to: " + inbox)
               emails + (recipient -> inbox.copy(emails = inbox.emails :+ burnerEmailMessage))
             case None        =>
+              println("updating inbox. No existing messages. ")
               emails + (recipient -> Inbox(List(burnerEmailMessage)))
           }
         )
