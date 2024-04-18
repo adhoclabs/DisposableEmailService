@@ -31,7 +31,7 @@ object BurnerEmailMessageId {
 case class BurnerEmailMessageOutput(
   id:                   BurnerEmailMessageId,
   source:               String,
-  to:                   List[String],
+  to:                   List[BurnerEmailAddress],
   from:                 List[String],
   //                  cc: List[String],
   //                  bcc: List[String],
@@ -47,7 +47,7 @@ case class BurnerEmailMessageOutput(
 case class BurnerEmailMessage(
   id:                   BurnerEmailMessageId,
   source:               String,
-  to:                   List[String],
+  to:                   List[BurnerEmailAddress],
   from:                 List[String],
 //                  cc: List[String],
 //                  bcc: List[String],
@@ -101,7 +101,7 @@ object BurnerEmailMessage       {
       source = "source",
       to =
         List(
-          burnerEmailAddress.address
+          burnerEmailAddress
         ),
       from =
         List(
@@ -146,6 +146,10 @@ trait EmailManager {
   def archiveMessage(
       messageId: BurnerEmailMessageId
   ): Future[Unit]
+
+  def createNewEmailMessage(
+      burnerEmailMessage: BurnerEmailMessage
+  ): ZIO[Any, String, Unit]
 }
 
 case class Inbox(emails: List[BurnerEmailMessage]) {
@@ -232,6 +236,27 @@ case class EmailManagerImpl(
   override def deleteMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
 
   override def archiveMessage(messageId: BurnerEmailMessageId): Future[Unit] = ???
+
+  override def createNewEmailMessage(burnerEmailMessage: BurnerEmailMessage): ZIO[Any, String, Unit] = {
+    for {
+      _         <- ZIO.unit
+      recipient <-
+        burnerEmailMessage.to match {
+          case List(oneRecipient) => ZIO.succeed(oneRecipient)
+          case other              => ZIO.fail("Only one recipient allowed.")
+        }
+      _         <-
+        emails.update(emails =>
+          emails.get(recipient) match {
+            case Some(inbox) =>
+              emails + (recipient -> inbox.copy(emails = inbox.emails :+ burnerEmailMessage))
+            case None        =>
+              emails + (recipient -> Inbox(List(burnerEmailMessage)))
+          }
+        )
+//          emails + (recipient -> Inbox(List(burnerEmailMessage))
+    } yield ()
+  }
 }
 
 object EmailManager {

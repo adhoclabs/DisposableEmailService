@@ -64,8 +64,9 @@ object EmailEndpoints {
       .??(Doc.p("This just quietly accepts valid payloads. TODO save for relevant user, if exists."))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[BurnerEmailMessage]
-      .out[BurnerEmailMessage](Status.Created)
-      .outError[ErrorResponse](Status.NotFound)
+      .out[Unit](Status.Created)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
       .examplesIn(
         "Pre-existing Record" ->
           BurnerEmailMessage
@@ -231,7 +232,7 @@ case class EmailRoutes(
   val postMessage =
     EmailEndpoints.postMessage.implement {
       Handler.fromFunctionZIO { (emailMessage: BurnerEmailMessage) =>
-        ZIO.succeed(emailMessage)
+        emailManager.createNewEmailMessage(emailMessage).mapError(s => Right(BadRequestResponse(s)))
       }
 
     }

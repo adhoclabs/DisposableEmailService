@@ -8,5 +8,7 @@ case class BurnerEmailAddress(address: String)
 
 object BurnerEmailAddress {
 
-  implicit val schema: Schema[BurnerEmailAddress] = DeriveSchema.gen
+  implicit val schema: Schema[BurnerEmailAddress] = {
+    Schema[String].transform(BurnerEmailAddress.apply, _.address)
+  }
 }
