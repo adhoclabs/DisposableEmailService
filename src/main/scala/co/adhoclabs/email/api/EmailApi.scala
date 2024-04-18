@@ -84,7 +84,7 @@ object EmailEndpoints {
           UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
 
-  val getAddresses =
+  val getEmailAddresses =
     Endpoint(
       Method.GET / "email" / "user" / userIdPathCodec("userId") / "email-addresses"
     )
@@ -124,7 +124,7 @@ object EmailEndpoints {
       postMessage,
       getMessage,
       getInbox,
-      getAddresses,
+      getEmailAddresses,
       delete
     )
 }
@@ -191,7 +191,7 @@ case class EmailRoutes(
     }
 
   val getEmailAddresses =
-    EmailEndpoints.getAddresses.implement {
+    EmailEndpoints.getEmailAddresses.implement {
       Handler.fromFunctionZIO { case (userId: UserId) =>
         ZIO.succeed(
           List(
@@ -227,6 +227,7 @@ case class EmailRoutes(
       getMessage,
       getInbox,
       delete,
+      getEmailAddresses,
       postMessage
     )
 }
