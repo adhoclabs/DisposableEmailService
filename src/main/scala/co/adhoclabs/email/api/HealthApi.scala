@@ -18,8 +18,8 @@ object HealthEndpoint {
 
   val endpoints =
     List(
-      api,
-      db
+//      api,
+//      db
     )
 }
 
