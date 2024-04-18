@@ -58,7 +58,7 @@ object EmailEndpoints {
 
   val getMessage =
     Endpoint(
-      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages" / emailMessageIdPathCodec(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "email-messages" / emailMessageIdPathCodec(
         "emailMessageId"
       )
     )
@@ -73,7 +73,7 @@ object EmailEndpoints {
 
   val getInbox =
     Endpoint(
-      Method.GET / "email" / "user" / userIdPathCodec("userId") / "emailMessages"
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "email-messages"
     )
       .??(Doc.p("Get all email messages for a user"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
@@ -84,8 +84,21 @@ object EmailEndpoints {
           UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
 
+  val getAddresses =
+    Endpoint(
+      Method.GET / "email" / "user" / userIdPathCodec("userId") / "email-addresses"
+    )
+      .??(Doc.p("Get all email messages for a user"))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
+      .out[List[BurnerEmailAddress]](Status.Ok)
+      .outError[ErrorResponse](Status.NotFound)
+      .examplesIn(
+        "Pre-existing Record" ->
+          UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
+      )
+
   val submit =
-    Endpoint(Method.POST / "email" / "user" / userIdPathCodec("userId") / "emailAddress")
+    Endpoint(Method.POST / "email" / "user" / userIdPathCodec("userId") / "email-address")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .in[BurnerEmailAddress]
       .out[BurnerEmailAddress](Status.Created)
@@ -101,7 +114,7 @@ object EmailEndpoints {
 
   val delete =
     // TODO Return 404 when album with id not found?
-    Endpoint(Method.DELETE / "email" / "emailMessages" / emailMessageIdPathCodec("emailMessageId"))
+    Endpoint(Method.DELETE / "email" / "email-messages" / emailMessageIdPathCodec("emailMessageId"))
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
       .out[EmptyResponse](Status.NoContent) // TODO Why not AlbumWithSongs here?
 
@@ -111,6 +124,7 @@ object EmailEndpoints {
       postMessage,
       getMessage,
       getInbox,
+      getAddresses,
       delete
     )
 }
@@ -135,16 +149,28 @@ case class EmailRoutes(
   val getMessage =
     EmailEndpoints.getMessage.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
-        ZIO
-          .fromOption[BurnerEmailMessage](
-            Some(
-              BurnerEmailMessage.create(userId, emailMessageId)
-            )
-          )
-          .mapError(_ => new Exception("No email message with id: " + emailMessageId))
-          .orDie
+        (
+          for {
+            result  <-
+              ZIO
+                .fromOption[BurnerEmailMessage](
+                  Some(
+                    BurnerEmailMessage.create(userId, emailMessageId)
+                  )
+                )
+                .mapError(_ => new Exception("No email message with id: " + emailMessageId))
+                .orDie
+            preview <- getPreview(result.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
+          } yield result.copy(preview = Some(preview))
+        ).provide(Client.default, Scope.default).orDie
       }
     }
+
+  def getPreview(url: String) =
+    for {
+      plainText <- Client.request(Request.get(url))
+      body      <- plainText.body.asString
+    } yield body.take(100)
 
   val getInbox =
     EmailEndpoints.getInbox.implement {
@@ -161,6 +187,19 @@ case class EmailRoutes(
           )
 //          .mapError(_ => new Exception("No user with id: " + userId))
 //          .orDie
+      }
+    }
+
+  val getEmailAddresses =
+    EmailEndpoints.getAddresses.implement {
+      Handler.fromFunctionZIO { case (userId: UserId) =>
+        ZIO.succeed(
+          List(
+            BurnerEmailAddress(s"email1-$userId@burnermail.me"),
+            BurnerEmailAddress(s"email2-$userId@burnermail.me"),
+            BurnerEmailAddress(s"email3-$userId@burnermail.me")
+          )
+        )
       }
     }
 
