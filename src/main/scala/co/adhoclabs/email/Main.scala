@@ -7,6 +7,7 @@ import zio.{ZIO, ZIOAppDefault, ZLayer}
 import zio.http.Server
 
 import java.time.Clock
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 object Main extends ZIOAppDefault {
@@ -34,9 +35,28 @@ object Main extends ZIOAppDefault {
       ApiZ.layer,
       EmailRoutes.layer,
       EmailManager.layer(
-//        Map(EmailEndpoints.goodUserId -> Inbox(List.empty)),
-        Map.empty,
-        Map.empty
+        Map(
+          EmailEndpoints.preloadedEmailAddress1 -> Inbox(
+            List(
+              BurnerEmailMessage.create(
+                EmailEndpoints.goodUserId,
+                EmailEndpoints.preloadedEmailAddress1,
+                EmailEndpoints.preloadedEmailId
+              ),
+              BurnerEmailMessage.create(
+                EmailEndpoints.goodUserId,
+                EmailEndpoints.preloadedEmailAddress1,
+                BurnerEmailMessageId(UUID.randomUUID()) // TODO Note that this is random
+              )
+            )
+          )
+        ),
+        Map(
+          EmailEndpoints.goodUserId             -> List(
+            EmailEndpoints.preloadedEmailAddress1,
+            EmailEndpoints.preloadedEmailAddress2
+          )
+        )
       ), // TODO Give a starting email?
       ZLayer.succeed(HealthRoutes())
     )

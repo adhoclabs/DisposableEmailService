@@ -91,13 +91,17 @@ case class BurnerEmailMessageOld(
 object BurnerEmailMessage       {
   implicit val schema: Schema[BurnerEmailMessage] = DeriveSchema.gen
 
-  def create(userId: UserId, emailMessageId: BurnerEmailMessageId): BurnerEmailMessage = {
+  def create(
+      userId: UserId,
+      burnerEmailAddress: BurnerEmailAddress,
+      emailMessageId: BurnerEmailMessageId
+  ): BurnerEmailMessage = {
     BurnerEmailMessage(
       id = emailMessageId,
       source = "source",
       to =
         List(
-          userId.id.toString
+          burnerEmailAddress.address
         ),
       from =
         List(
@@ -157,30 +161,32 @@ case class EmailManagerImpl(
   def getInbox(
       userId: UserId,
       burnerEmailAddress: BurnerEmailAddress
-  ): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
-    ???
-  }
+  ): ZIO[Any, String, List[BurnerEmailMessageOutput]] =
+    for {
+      _                     <- ZIO.debug("Decoded email: " + burnerEmailAddress)
+      emailsWithoutPreviews <-
+        emails.get
+          .map(_.getOrElse(burnerEmailAddress, Inbox(List.empty)).emails)
+          .map(messages => messages.map(BurnerEmailMessageOutput.fromOriginal))
+      emailsWithPreviews    <-
+        ZIO.foreach(emailsWithoutPreviews) { message =>
+          (for {
+            preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
+          } yield message.copy(preview = Some(preview)))
+            .provide(Client.default, Scope.default)
+            .orDie
+        }
+
+    } yield emailsWithoutPreviews
 
   def getInbox(userId: UserId): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
-    ZIO
-      .foreach(
-        List(
-          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID())),
-          BurnerEmailMessage.create(userId, BurnerEmailMessageId(UUID.randomUUID()))
-        )
-      )(message =>
-        (for {
-          preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
-        } yield message.copy(preview = Some(preview)))
-      )
-      .map(messages => messages.map(BurnerEmailMessageOutput.fromOriginal))
-//      .map(Inbox(_))
-      .provide(Client.default, Scope.default)
-      .orDie
-//    emails.get.map(_.getOrElse(userId, Inbox(Map.empty)))
+    for {
+      userEmailAddress <- emailAddresses.get.map(_.getOrElse(userId, List.empty))
+      currentEmails    <-
+        ZIO.foreach(userEmailAddress) { burnerEmailAddress =>
+          getInbox(userId, burnerEmailAddress)
+        }
+    } yield currentEmails.flatten
   }
 
   def getPreview(url: String) =

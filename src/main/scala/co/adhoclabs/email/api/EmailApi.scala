@@ -16,6 +16,8 @@ import zio.http.codec.Doc
 import zio.http.endpoint.Endpoint
 import zio.schema.{DeriveSchema, Schema}
 
+import java.net.{URLDecoder, URLEncoder}
+import java.nio.charset.Charset
 import java.time.Instant
 import java.util.UUID
 
@@ -43,9 +45,17 @@ object EmailEndpoints {
 
   def emailMessageIdPathCodec(name: String) = uuid(name).transform(BurnerEmailMessageId.apply)(_.id)
 
+  def burnerEmailAddressPathCodec(name: String) =
+    string(name).transform(s => BurnerEmailAddress(URLDecoder.decode(s, Charset.defaultCharset())))(_.address)
+
   def userIdPathCodec(name: String) = uuid(name).transform(UserId.apply)(_.id)
 
   val goodUserId = UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
+
+  val preloadedEmailAddress1 = BurnerEmailAddress("preloaded1@burnermail.me")
+  val preloadedEmailAddress2 = BurnerEmailAddress("preloaded2@burnermail.me")
+
+  val preloadedEmailId = BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"))
 
   val postMessage =
     Endpoint(
@@ -59,7 +69,11 @@ object EmailEndpoints {
       .examplesIn(
         "Pre-existing Record" ->
           BurnerEmailMessage
-            .create(goodUserId, BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")))
+            .create(
+              goodUserId,
+              preloadedEmailAddress1,
+              BurnerEmailMessageId(UUID.randomUUID()) // TODO Should we make this more predictable?
+            )
       )
 
   val getMessage =
@@ -69,12 +83,12 @@ object EmailEndpoints {
       )
     )
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
-      .out[BurnerEmailMessage](Status.Created)
+      .out[BurnerEmailMessageOutput](Status.Created)
       .outError[ErrorResponse](Status.NotFound)
       .examplesIn(
         "Pre-existing Record" ->
-          (UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479")),
-          BurnerEmailMessageId(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")))
+          (goodUserId,
+          preloadedEmailId)
       )
 
   val getInbox =
@@ -105,6 +119,22 @@ object EmailEndpoints {
           UserId(UUID.fromString("d56ac10b-58cc-4372-a567-0e02b2c3d479"))
       )
 
+  val getInboxSpecificEmailAddress =
+    Endpoint(
+      Method.GET / "email" / "user" / userIdPathCodec(
+        "userId"
+      ) / "email-addresses" / burnerEmailAddressPathCodec("emailAddress") / "email-messages"
+    )
+      .??(Doc.p("Get messages for a user's specific burner email address"))
+      .??(openApiSrcLink(implicitly[sourcecode.Line]))
+      .out[List[BurnerEmailMessageOutput]](Status.Ok)
+      .outError[InternalErrorResponse](Status.InternalServerError)
+      .outError[BadRequestResponse](Status.BadRequest)
+      .examplesIn(
+        "Pre-existing address with emails"    -> (goodUserId, preloadedEmailAddress1),
+        "Pre-existing address without emails" -> (goodUserId, preloadedEmailAddress2)
+      )
+
   val submit =
     Endpoint(Method.POST / "email" / "user" / userIdPathCodec("userId") / "email-address")
       .??(openApiSrcLink(implicitly[sourcecode.Line]))
@@ -129,6 +159,7 @@ object EmailEndpoints {
   val endpoints =
     List(
       submit,
+      getInboxSpecificEmailAddress,
       postMessage,
       getMessage,
       getInbox,
@@ -157,12 +188,10 @@ case class EmailRoutes(
   val getMessage =
     EmailEndpoints.getMessage.implement {
       Handler.fromFunctionZIO { case (userId: UserId, emailMessageId: BurnerEmailMessageId) =>
-        ZIO
-          .fromOption[BurnerEmailMessage](
-            Some(
-              BurnerEmailMessage.create(userId, emailMessageId)
-            )
-          )
+        (for {
+          userInbox <- emailManager.getInbox(userId)
+          message   <- ZIO.fromOption(userInbox.find(_.id == emailMessageId))
+        } yield message)
           .mapError(_ => new Exception("No email message with id: " + emailMessageId))
           .orDie
       }
@@ -172,6 +201,13 @@ case class EmailRoutes(
     EmailEndpoints.getInbox.implement {
       Handler.fromFunctionZIO { case (userId: UserId) =>
         emailManager.getInbox(userId).mapError(s => Right(BadRequestResponse(s)))
+      }
+    }
+
+  val getInboxSpecificEmailAddress =
+    EmailEndpoints.getInboxSpecificEmailAddress.implement {
+      Handler.fromFunctionZIO { case (userId: UserId, burnerEmailAddress: BurnerEmailAddress) =>
+        emailManager.getInbox(userId, burnerEmailAddress).mapError(s => Right(BadRequestResponse(s)))
       }
     }
 
@@ -207,6 +243,7 @@ case class EmailRoutes(
       getInbox,
       delete,
       getEmailAddresses,
+      getInboxSpecificEmailAddress,
       postMessage
     )
 }
