@@ -46,20 +46,23 @@ case class ApiZ(
         println("In handleErrorCause")
         cause match {
           case Cause.Fail(value, trace)   =>
-            for {
-              _        <- ZIO.debug(value)
-              _        <- ZIO.debug("warning: " + value.header(Header.Warning))
-              failBody <-
-                value.body.asString
-                  .catchAll(ex => ZIO.succeed("Could not convert body to string: " + ex))
-              _        <- ZIO.debug("Got past string stuff: " + failBody)
-
-            } yield Response(
-              Status.InternalServerError,
-              body =
-                Body.from(
-                  ErrorResponse(failBody)
-                )
+//            for {
+//              _        <- ZIO.debug(value)
+//              _        <- ZIO.debug("warning: " + value.header(Header.Warning))
+//              failBody <-
+//                value.body.asString
+//                  .catchAll(ex => ZIO.succeed("Could not convert body to string: " + ex))
+//              _        <- ZIO.debug("Got past string stuff: " + failBody)
+//
+//            } yield
+            ZIO.succeed(
+              Response(
+                Status.InternalServerError,
+                body =
+                  Body.from(
+                    ErrorResponse("Unknown failure.")
+                  )
+              )
             )
           case Cause.Die(value, trace)    =>
             ZIO.succeed(

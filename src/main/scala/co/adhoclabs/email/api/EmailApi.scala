@@ -200,9 +200,23 @@ case class EmailRoutes(
 
   val getInbox =
     EmailEndpoints.getInbox.implement {
-      Handler.fromFunctionZIO { case (userId: UserId) =>
-        emailManager.getInbox(userId).mapError(s => Right(BadRequestResponse(s)))
-      }
+      Handler
+        .fromFunctionZIO { case (userId: UserId) =>
+          emailManager.getInbox(userId).mapError(s => Right(BadRequestResponse(s)))
+        }
+//        .catchAllDefect { ex =>
+//          import Schemas.errorResponseSchema
+//          import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
+//          Handler.fail(
+//            Response(
+//              Status.InternalServerError,
+//              body =
+//                Body.from(
+//                  ErrorResponse(ex.getMessage)
+//                )
+//            )
+//          )
+//        }
     }
 
   val getInboxSpecificEmailAddress =
@@ -238,7 +252,7 @@ case class EmailRoutes(
     }
 
   val routes =
-    Routes(
+    Routes[Any, Exception](
       submit,
       getMessage,
       getInbox,

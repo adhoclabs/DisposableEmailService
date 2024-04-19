@@ -175,7 +175,13 @@ case class EmailManagerImpl(
       emailsWithPreviews    <-
         ZIO.foreach(emailsWithoutPreviews) { message =>
           (for {
-            preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
+            preview <-
+              message.plainBodyDownloadUrl match {
+                case Some(url) =>
+                  getPreview(url).debug("Preview") // HttpClient
+                case None      => ZIO.succeed("No preview available")
+              }
+
           } yield message.copy(preview = Some(preview)))
             .provide(Client.default, Scope.default)
             .tapError(ex =>
@@ -188,7 +194,6 @@ case class EmailManagerImpl(
 
   def getInbox(userId: UserId): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
     for {
-      _                <- ZIO.succeed(throw new Exception("fuck"))
       userEmailAddress <- emailAddresses.get.map(_.getOrElse(userId, List.empty))
       currentEmails    <-
         ZIO.foreach(userEmailAddress) { burnerEmailAddress =>
@@ -198,10 +203,10 @@ case class EmailManagerImpl(
   }
 
   def getPreview(url: String) =
-    for {
+    (for {
       plainText <- Client.request(Request.get(url))
       body      <- plainText.body.asString
-    } yield body.take(100)
+    } yield body.take(100)).catchAll(ex => ZIO.succeed("Error downloading preview: " + ex.getMessage))
 
   def getEmailAddresses(
       userId: UserId
