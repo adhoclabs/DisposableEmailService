@@ -178,13 +178,17 @@ case class EmailManagerImpl(
             preview <- getPreview(message.plainBodyDownloadUrl.get).debug("Preview") // HttpClient
           } yield message.copy(preview = Some(preview)))
             .provide(Client.default, Scope.default)
-            .orDie
+            .tapError(ex =>
+              ZIO.debug("Error getting preview for messageId: " + message.id + " Error: " + ex.getMessage)
+            )
+            .orDie // TODO Better error handling here
         }
 
     } yield emailsWithPreviews
 
   def getInbox(userId: UserId): ZIO[Any, String, List[BurnerEmailMessageOutput]] = {
     for {
+      _                <- ZIO.succeed(throw new Exception("fuck"))
       userEmailAddress <- emailAddresses.get.map(_.getOrElse(userId, List.empty))
       currentEmails    <-
         ZIO.foreach(userEmailAddress) { burnerEmailAddress =>
